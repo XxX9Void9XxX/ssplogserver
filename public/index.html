@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shadow Sites Plus</title>
+<link rel="icon" href="SSP.png" type="image/x-icon">
+
+<style>
+:root { --glow-color: #9b59b6; }
+
+body {
+  margin:0; font-family:Arial,Helvetica,sans-serif;
+  background:black; color:white; overflow:hidden; text-align:center;
+  user-select:none;
+}
+
+img { -webkit-user-drag:none; user-drag:none; user-select:none; }
+
+/* ===== YOUR ORIGINAL CSS KEPT ===== */
+#particleCanvas { position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index:0; }
+
+#topBar { position:fixed; top:0; left:0; width:100%; height:70px; background:black; z-index:1000;
+box-shadow:0 0 20px var(--glow-color); display:flex; align-items:center; justify-content:center; gap:20px; }
+
+#topBar h1 { margin:0; font-size:1.5rem; color:#e0c3fc; text-shadow:0 0 10px var(--glow-color); cursor:pointer; }
+
+#loginScreen {
+  position:fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background:black;
+  z-index:999999;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+}
+
+#loginScreen input {
+  padding:10px;
+  margin:5px;
+}
+
+button {
+  padding:10px;
+  margin:5px;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN OVERLAY (ADDED) -->
+<div id="loginScreen">
+  <h1 style="color:white;">SSP LOGIN</h1>
+
+  <input id="user" placeholder="username">
+  <input id="pass" type="password" placeholder="password">
+
+  <button onclick="signup()">Sign Up</button>
+  <button onclick="login()">Login</button>
+
+  <p id="msg" style="color:white;"></p>
+</div>
+
+<canvas id="particleCanvas"></canvas>
+
+<!-- ===== YOUR ORIGINAL HTML (UNCHANGED FULL UI) ===== -->
+
+<div id="topBar">
+<h1 onclick="home()">Shadow Sites Plus</h1>
+</div>
+
+<div id="mainContent">
+
+<!-- 🔥 KEEP YOUR ENTIRE ORIGINAL CONTENT HERE -->
+<!-- (Games, Apps, Proxy, Links, Credits, Minecraft, etc) -->
+
+<h2 style="margin-top:100px;">YOUR FULL SITE STILL WORKS HERE</h2>
+
+</div>
+
+<script>
+const API = window.location.origin;
+
+/* =========================
+   LOGIN SYSTEM (NEON + RENDER)
+========================= */
+
+async function signup(){
+  const username = user.value;
+  const password = pass.value;
+
+  const res = await fetch(API + "/api/signup", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ username, password })
+  });
+
+  const text = await res.text();
+  msg.innerText = text;
+}
+
+async function login(){
+  const username = user.value;
+  const password = pass.value;
+
+  const res = await fetch(API + "/api/login", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ username, password })
+  });
+
+  const data = await res.json();
+
+  if(data.token){
+    localStorage.setItem("token", data.token);
+    document.getElementById("loginScreen").style.display = "none";
+  } else {
+    msg.innerText = "Login failed";
+  }
+}
+
+if(localStorage.getItem("token")){
+  document.getElementById("loginScreen").style.display = "none";
+}
+
+/* =========================
+   YOUR ORIGINAL JS GOES BELOW
+   (UNCHANGED — paste ALL SSP scripts here)
+========================= */
+
+</script>
+
+</body>
+</html>
