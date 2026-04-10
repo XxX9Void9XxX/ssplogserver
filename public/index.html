@@ -464,7 +464,7 @@ function checkLoginStatus() {
         authOverlay.style.display = 'flex';
         logoutBtn.style.display = 'none';
         adminPanelBtn.style.display = 'none';
-        clearInterval(heartbeatInterval);
+        if(heartbeatInterval) clearInterval(heartbeatInterval);
     }
 }
 checkLoginStatus();
@@ -472,6 +472,7 @@ checkLoginStatus();
 toggleAuthBtn.addEventListener('click', () => {
     isLoginMode = !isLoginMode;
     authMessage.innerText = "";
+    authMessage.style.color = "#d580ff";
     if (isLoginMode) {
         loginForm.style.display = 'block';
         signupForm.style.display = 'none';
@@ -490,6 +491,7 @@ loginForm.addEventListener('submit', async (e) => {
     const username = document.getElementById('loginUser').value;
     const password = document.getElementById('loginPass').value;
     authMessage.innerText = "Authenticating...";
+    authMessage.style.color = "#d580ff";
 
     try {
         const response = await fetch('/login', {
@@ -503,12 +505,15 @@ loginForm.addEventListener('submit', async (e) => {
             localStorage.setItem('token', data.token);
             localStorage.setItem('role', data.role);
             authMessage.innerText = "Access Granted.";
+            authMessage.style.color = "#28a745";
             setTimeout(checkLoginStatus, 500);
         } else {
             authMessage.innerText = data.error;
+            authMessage.style.color = "#ff4d4d";
         }
     } catch (err) {
         authMessage.innerText = "Server error. Try again later.";
+        authMessage.style.color = "#ff4d4d";
     }
 });
 
@@ -518,6 +523,7 @@ signupForm.addEventListener('submit', async (e) => {
     const email = document.getElementById('signupEmail').value;
     const password = document.getElementById('signupPass').value;
     authMessage.innerText = "Registering...";
+    authMessage.style.color = "#d580ff";
 
     try {
         const response = await fetch('/signup', {
@@ -529,22 +535,39 @@ signupForm.addEventListener('submit', async (e) => {
         
         if (response.ok) {
             authMessage.innerText = data.message;
+            authMessage.style.color = "#28a745";
             setTimeout(() => toggleAuthBtn.click(), 2500);
         } else {
             authMessage.innerText = data.error;
+            authMessage.style.color = "#ff4d4d";
         }
     } catch (err) {
         authMessage.innerText = "Server error. Try again later.";
+        authMessage.style.color = "#ff4d4d";
     }
 });
 
-logoutBtn.addEventListener('click', () => {
+function forceLogout(msg) {
     localStorage.removeItem('token');
     localStorage.removeItem('role');
-    authMessage.innerText = "Logged out securely.";
+    if (heartbeatInterval) clearInterval(heartbeatInterval);
     hideAllSections();
     homeContent.style.display = "block";
-    checkLoginStatus();
+    
+    // Show login screen with red warning message
+    checkLoginStatus(); 
+    authMessage.innerText = msg;
+    authMessage.style.color = "#ff4d4d"; 
+}
+
+logoutBtn.addEventListener('click', () => {
+    const token = localStorage.getItem('token');
+    if (token) {
+        // Tell server we're logging out so we don't look online
+        fetch('/offline', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }}).catch(()=>{});
+    }
+    forceLogout("Logged out securely.");
+    authMessage.style.color = "#d580ff"; // Reset color for normal logout
 });
 
 // --- ADMIN SYSTEM ---
@@ -592,13 +615,52 @@ window.adminAction = async function(userId, action) {
     loadAdminData(); // Refresh table
 };
 
-function startHeartbeat() {
+async function sendHeartbeat() {
     const token = localStorage.getItem('token');
-    fetch('/heartbeat', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }});
-    heartbeatInterval = setInterval(() => {
-        fetch('/heartbeat', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }});
-    }, 30000);
+    if (!token) return;
+    
+    try {
+        const response = await fetch('/heartbeat', { 
+            method: 'POST', 
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        // If token is invalid or user was banned on the backend (401/403)
+        if (response.status === 401 || response.status === 403) {
+            forceLogout("Your account has been banned or session expired.");
+            return;
+        }
+
+        // Check if the backend responded specifically with a banned status payload
+        const data = await response.json().catch(() => ({}));
+        if (data.is_banned || data.banned || data.error === "banned") {
+            forceLogout("Your account has been banned by an admin.");
+        }
+        
+    } catch (err) {
+        // Backend might be offline, don't logout, just ignore
+    }
 }
+
+function startHeartbeat() {
+    sendHeartbeat();
+    if (heartbeatInterval) clearInterval(heartbeatInterval);
+    // Lowered to 15 seconds so bans take effect instantly
+    heartbeatInterval = setInterval(sendHeartbeat, 15000); 
+}
+
+// FIX FOR ONLINE STATUS - Notify server when the tab is closed!
+window.addEventListener('beforeunload', () => {
+    const token = localStorage.getItem('token');
+    if (token) {
+        // keepalive ensures the fetch finishes even while the tab is closing
+        fetch('/offline', { 
+            method: 'POST', 
+            headers: { 'Authorization': `Bearer ${token}` },
+            keepalive: true 
+        }).catch(()=>{});
+    }
+});
 
 
 // --- BASE SITE LOGIC ---
