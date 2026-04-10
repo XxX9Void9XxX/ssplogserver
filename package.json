@@ -1,0 +1,16 @@
+{
+  "name": "my-login-system",
+  "version": "1.0.0",
+  "description": "A secure login and signup system using Neon and Render",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.11.5"
+  }
+}
