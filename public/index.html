@@ -8,16 +8,76 @@
 <style>
 :root { --glow-color: #9b59b6; }
 
-body { margin:0; font-family:Arial,Helvetica,sans-serif; background:black; color:white; overflow:hidden; text-align:center; position:relative; user-select:none; }
+body {
+  margin:0; font-family:Arial,Helvetica,sans-serif;
+  background:black; color:white; overflow:hidden; text-align:center; position:relative;
+  user-select:none;
+}
+
 img { -webkit-user-drag: none; user-drag: none; user-select: none; }
 
-/* --- ADMIN DASHBOARD --- */
-#adminDashboard {
-    display: none; position: fixed; top: 70px; left: 0; width: 100vw; height: calc(100vh - 70px);
-    background: #0a0a0a; z-index: 8000; overflow-y: auto; padding: 40px; box-sizing: border-box;
-}
+#particleCanvas { position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index:0; }
+
+#topBar { position:fixed; top:0; left:0; width:100%; height:70px; background:black; z-index:1000;
+  box-shadow:0 0 20px var(--glow-color); display:flex; align-items:center; justify-content:center; gap:20px; }
+#topBar h1 { margin:0; font-size:1.5rem; color:#e0c3fc;
+  text-shadow:0 0 10px var(--glow-color); animation:pulseText 2s infinite alternate; cursor:pointer; user-select:none; }
+#topBar a { cursor:pointer; font-weight:bold; background:none; border:none; color:#e0c3fc;
+  text-decoration:none; text-shadow:0 0 8px var(--glow-color); transition:0.2s; user-select:none; }
+#topBar a:hover { color:#fff; text-shadow:0 0 15px var(--glow-color); }
+
+#clock { position:fixed; bottom:20px; right:20px; font-size:1rem; color:#a020f0;
+  background:rgba(0,0,0,0.7); padding:6px 10px; border-radius:6px; z-index:2000; box-shadow:0 0 10px var(--glow-color); }
+
+#settingsIcon { position:fixed; bottom:20px; left:20px; width:50px; height:50px; cursor:pointer; z-index:2000;
+  filter:drop-shadow(0 0 10px var(--glow-color)); animation:glowPulse 2s infinite alternate; }
+#settingsMenu { position:fixed; bottom:90px; left:20px; width:260px; background:black; border:2px solid var(--glow-color);
+  border-radius:12px; padding:15px; display:none; z-index:3000; box-shadow:0 0 20px var(--glow-color); max-height:70vh; overflow-y:auto; user-select:none; }
+#settingsMenu h3 { margin:10px 0; color:#e0c3fc; border-bottom:1px solid var(--glow-color); padding-bottom:5px; }
+#settingsMenu label { display:block; margin:12px 0; cursor:pointer; user-select:none; }
+.tool-btn { display:block; width:100%; padding:8px; margin:8px 0; background:transparent; border:1px solid var(--glow-color);
+  color:#e0c3fc; border-radius:5px; cursor:pointer; font-weight:bold; transition:0.3s; user-select:none; }
+.tool-btn:hover { background:var(--glow-color); color:white; box-shadow:0 0 10px var(--glow-color); }
+#adminPanelBtn { border-color: #ff4d4d; color: #ff4d4d; }
+#adminPanelBtn:hover { background: #ff4d4d; color: white; box-shadow: 0 0 10px #ff4d4d; }
+#logoutBtn { border-color: #dc3545; color: #dc3545; }
+#logoutBtn:hover { background: #dc3545; color: white; box-shadow: 0 0 10px #dc3545; }
+
+#mainContent { position:absolute; top:70px; left:0; width:100%; height:calc(100vh - 70px); overflow:hidden; z-index:1; }
+#homeContent { margin-top:40px; z-index:2; position:relative; user-select:none; }
+#homeContent h2 { color:#e0c3fc; text-shadow:0 0 10px var(--glow-color); animation:pulseText 2s infinite alternate; }
+#contentFrame { width:100%; height:100%; border:none; display:none; z-index:2; }
+
+#gamesContent, #appsContent, #minecraftContent, #linksContent, #requestContent, #adminDashboard { display:none; width:100%; height:100%; overflow-y:auto; padding-top:20px; box-sizing:border-box; padding-bottom:40px; z-index:2; position:relative; }
+.searchBar { padding:10px 15px; width:60%; max-width:400px; font-size:1rem; margin:10px auto 30px auto; border-radius:10px; border:2px solid var(--glow-color); background-color:#111; color:#e0c3fc; box-shadow:0 0 10px var(--glow-color), inset 0 0 5px var(--glow-color); outline:none; transition:0.3s; display:block; }
+.searchBar:focus { box-shadow:0 0 20px var(--glow-color), inset 0 0 10px var(--glow-color); }
+.linksContainer { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:20px; max-width:1000px; margin:0 auto; padding:0 20px; }
+.gameCard { background:#111; border-radius:15px; padding:20px 10px; cursor:pointer; transition:0.3s; box-shadow:0 0 10px var(--glow-color); display:flex; flex-direction:column; justify-content:center; align-items:center; }
+.gameCard:hover { transform:scale(1.05); box-shadow:0 0 25px var(--glow-color); }
+.gameCard img { width:100%; aspect-ratio:1/1; object-fit:cover; border-radius:10px; margin-bottom:8px; }
+.gameTitle { font-size:0.9rem; text-shadow:0 0 8px var(--glow-color); }
+
+#linksContent { overflow-y: auto; padding-top: 40px; padding-bottom: 80px; text-align: center; }
+#linksContent h1, #linksContent h2 { color: #e0c3fc; text-shadow: 0 0 10px #9b59b6, 0 0 20px #8e44ad; animation: glowPurple 2s infinite alternate; }
+#linksContent a.line { font-size: 1.5rem; text-decoration: none; display: block; margin: 1.5rem auto; max-width: 800px; color: #e0c3fc; text-shadow: 0 0 10px #d580ff, 0 0 20px #9b59b6; cursor: pointer; transition: transform 0.2s ease; }
+#linksContent a.line:hover { transform: scale(1.05); text-shadow: 0 0 15px #d580ff, 0 0 25px #9b59b6; }
+
+#requestContent { padding-top: 40px; padding-bottom: 40px; text-align: center; }
+#requestContent h1 { color: #e0c3fc; text-shadow: 0 0 10px var(--glow-color); animation: pulseText 2s infinite alternate; margin-bottom: 20px; }
+#requestFormContainer { width: 100%; height: calc(100vh - 140px); display: flex; justify-content: center; align-items: center; }
+#requestIframe { width: 100%; height: 100%; max-width: 900px; max-height: 700px; border: none; border-radius: 15px; box-shadow: 0 0 20px var(--glow-color); }
+
+#proxyContent {  display:none;  width:100%;  height:100%;  z-index:2;  position:relative;  padding:0 !important; }
+#proxyIframe {  width:100%;  height:100vh;  border:none;  display:block; position: absolute; top: 0; left: 0; }
+
+#creditsContent { display:none; width:100%; height:100%; overflow-y:auto; padding-top:40px; box-sizing:border-box; padding-bottom:80px; z-index:2; position:relative; user-select:text; }
+.creditLine { font-size:1.6rem; color:#e0c3fc; text-shadow:0 0 5px var(--glow-color), 0 0 10px var(--glow-color); animation:creditPulse 2s infinite alternate, fadeIn 1s forwards; margin:1.2rem 0; opacity:0; transition:transform 0.2s ease; text-decoration:none; display:block; }
+a.creditLine { cursor:pointer; }
+a.creditLine:hover { transform:scale(1.05); }
+
+/* --- ADMIN PANEL STYLES --- */
 #adminDashboard h1 { color: #ff4d4d; text-shadow: 0 0 15px #ff4d4d; margin-bottom: 30px; }
-.adminTable { width: 100%; max-width: 1000px; margin: 0 auto; border-collapse: collapse; background: #111; box-shadow: 0 0 15px var(--glow-color); border-radius: 10px; overflow: hidden; }
+.adminTable { width: 90%; max-width: 1000px; margin: 0 auto; border-collapse: collapse; background: #111; box-shadow: 0 0 15px var(--glow-color); border-radius: 10px; overflow: hidden; }
 .adminTable th, .adminTable td { padding: 15px; border-bottom: 1px solid #333; text-align: left; }
 .adminTable th { background: #222; color: #e0c3fc; }
 .adminTable tr:hover { background: #1a1a1a; }
@@ -44,19 +104,17 @@ img { -webkit-user-drag: none; user-drag: none; user-select: none; }
 .toggleAuth { margin-top: 15px; font-size: 0.9rem; color: #a020f0; cursor: pointer; text-decoration: underline; transition: 0.2s; }
 .toggleAuth:hover { color: #e0c3fc; text-shadow: 0 0 10px var(--glow-color); }
 
-#particleCanvas { position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index:0; }
-#topBar { position:fixed; top:0; left:0; width:100%; height:70px; background:black; z-index:1000; box-shadow:0 0 20px var(--glow-color); display:flex; align-items:center; justify-content:center; gap:20px; }
-#topBar h1 { margin:0; font-size:1.5rem; color:#e0c3fc; text-shadow:0 0 10px var(--glow-color); animation:pulseText 2s infinite alternate; cursor:pointer; user-select:none; }
-#topBar a { cursor:pointer; font-weight:bold; background:none; border:none; color:#e0c3fc; text-decoration:none; text-shadow:0 0 8px var(--glow-color); transition:0.2s; user-select:none; }
-#topBar a:hover { color:#fff; text-shadow:0 0 15px var(--glow-color); }
-#clock { position:fixed; bottom:20px; right:20px; font-size:1rem; color:#a020f0; background:rgba(0,0,0,0.7); padding:6px 10px; border-radius:6px; z-index:2000; box-shadow:0 0 10px var(--glow-color); }
-#mainContent { position:absolute; top:70px; left:0; width:100%; height:calc(100vh - 70px); overflow:hidden; z-index:1; }
-#homeContent { margin-top:40px; z-index:2; position:relative; user-select:none; }
-#homeContent h2 { color:#e0c3fc; text-shadow:0 0 10px var(--glow-color); animation:pulseText 2s infinite alternate; }
-#contentFrame { width:100%; height:100%; border:none; display:none; z-index:2; }
+.noGlow * { text-shadow:none !important; box-shadow:none !important; filter:none !important; animation:none !important; }
 
 @keyframes pulseText { 0%{ text-shadow:0 0 10px var(--glow-color),0 0 20px var(--glow-color); } 100%{ text-shadow:0 0 20px var(--glow-color),0 0 40px var(--glow-color); } }
 @keyframes glowPulse { 0%{ filter:drop-shadow(0 0 5px var(--glow-color)); box-shadow: 0 0 15px var(--glow-color); } 100%{ filter:drop-shadow(0 0 20px var(--glow-color)); box-shadow: 0 0 35px var(--glow-color); } }
+@keyframes creditPulse { 0% { text-shadow:0 0 5px var(--glow-color), 0 0 10px var(--glow-color); } 50% { text-shadow:0 0 15px #d580ff, 0 0 25px var(--glow-color); } 100% { text-shadow:0 0 5px var(--glow-color), 0 0 10px var(--glow-color); } }
+@keyframes fadeIn { to { opacity: 1; } }
+@keyframes glowPurple { 0% { text-shadow: 0 0 10px #9b59b6, 0 0 20px #8e44ad; } 100% { text-shadow: 0 0 20px #d580ff, 0 0 40px #9b59b6; } }
+
+#gamesContent::-webkit-scrollbar, #appsContent::-webkit-scrollbar, #creditsContent::-webkit-scrollbar, #minecraftContent::-webkit-scrollbar, #linksContent::-webkit-scrollbar, #requestContent::-webkit-scrollbar, #adminDashboard::-webkit-scrollbar { width: 8px; }
+#gamesContent::-webkit-scrollbar-track, #appsContent::-webkit-scrollbar-track, #creditsContent::-webkit-scrollbar-track, #minecraftContent::-webkit-scrollbar-track, #linksContent::-webkit-scrollbar-track, #requestContent::-webkit-scrollbar-track, #adminDashboard::-webkit-scrollbar-track { background: black; }
+#gamesContent::-webkit-scrollbar-thumb, #appsContent::-webkit-scrollbar-thumb, #creditsContent::-webkit-scrollbar-thumb, #minecraftContent::-webkit-scrollbar-thumb, #linksContent::-webkit-scrollbar-thumb, #requestContent::-webkit-scrollbar-thumb, #adminDashboard::-webkit-scrollbar-thumb { background: var(--glow-color); border-radius: 4px; }
 .topBtn { padding:6px 10px; background:transparent; border:1px solid var(--glow-color); color:#e0c3fc; border-radius:6px; cursor:pointer; font-weight:bold; text-shadow:0 0 8px var(--glow-color); transition:0.2s; }
 .topBtn:hover { background:var(--glow-color); color:white; box-shadow:0 0 10px var(--glow-color); }
 </style>
@@ -87,55 +145,307 @@ img { -webkit-user-drag: none; user-drag: none; user-select: none; }
 
 <canvas id="particleCanvas"></canvas>
 <div id="clock"></div>
+<img id="settingsIcon" src="/images/settings.png" alt="Settings">
 
-<div id="topBar">
-<h1 id="titleHeader" onclick="goHome()">Shadow Sites Plus</h1>
-<button onclick="refreshFrame()" class="topBtn">Refresh</button>
-<button id="logoutBtn" class="topBtn" style="display:none; border-color: red;">Log Out</button>
+<div id="settingsMenu">
+  <h3>General</h3>
+  <label><input type="checkbox" id="toggleGlow"> Glow Effects</label>
+  <label><input type="checkbox" id="toggleClock"> Show Clock</label>
+  <h3>Appearance</h3>
+  <label>Glow Color: <input type="color" id="glowColor" value="#9b59b6"></label>
+  <label><input type="checkbox" id="toggleFullscreen"> Fullscreen Mode</label>
+  <h3>Tools</h3>
+  <button class="tool-btn" onclick="runTool('autoclicker')">Autoclicker</button>
+  <button class="tool-btn" onclick="runTool('asteroids')">Asteroids</button>
+  <button class="tool-btn" onclick="runTool('edit')">Toggle Edit Mode</button>
+  <button class="tool-btn" id="adminPanelBtn" style="display:none;" onclick="showAdmin()">Admin Panel</button>
+  <button class="tool-btn" id="logoutBtn" style="display:none;">Log Out</button>
 </div>
 
-<div id="adminDashboard">
-    <h1>System Override: Admin Controls</h1>
-    <table class="adminTable">
-        <thead>
-            <tr>
-                <th>Username</th>
-                <th>Email</th>
-                <th>Status</th>
-                <th>Online</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody id="adminUserTableBody">
-            </tbody>
-    </table>
+<div id="topBar">
+  <h1 id="titleHeader">Shadow Sites Plus</h1>
+  <a onclick="showProxy()">Proxy</a>
+  <a onclick="showGames()">Games</a>
+  <a onclick="showApps()">Apps</a>
+  <a onclick="showCredits()">Credits</a>
+  <a onclick="showMinecraft()">Minecraft Stuff</a>
+  <a onclick="showLinks()">Links</a>
+  <a onclick="showRequest()">Request/Report</a>
+  <button onclick="fullscreenFrame()" class="topBtn">Fullscreen</button>
+  <button onclick="refreshFrame()" class="topBtn">Refresh</button>
 </div>
 
 <div id="mainContent">
-    <div id="homeContent">
-        <h2>Welcome to SSP</h2>
-        <h2>Status: Secure Connection.</h2>
+  <div id="homeContent">
+    <h2>Welcome to SSP</h2>
+    <h2>If a page says "Page not Found" or "404 not Found" click "Go Home" and then right click on the page and click reload iframe</h2>
+    <h2>Some pages like the proxy page and most of the links, are being updated. They can't be used for a while.</h2>
+  </div>
+
+  <div id="adminDashboard">
+      <h1>Admin Controls</h1>
+      <table class="adminTable">
+          <thead>
+              <tr>
+                  <th>Username</th>
+                  <th>Email</th>
+                  <th>Status</th>
+                  <th>Online</th>
+                  <th>Actions</th>
+              </tr>
+          </thead>
+          <tbody id="adminUserTableBody">
+              </tbody>
+      </table>
+  </div>
+
+  <div id="gamesContent">
+    <input type="text" class="searchBar" id="gamesSearchBar" placeholder="Search for a game...">
+    <div class="linksContainer" id="gamesLinksContainer">
+      <div class="gameCard" onclick="loadGame('/game/amongus')">
+        <img src="/images/amongus.png">
+        <div class="gameTitle">Among Us</div>
+      </div>
+      <div class="gameCard" onclick="loadGame('/game/awesometanks2')">
+        <img src="/images/awesometanks2.png">
+        <div class="gameTitle">Awesome Tanks 2</div>
+      </div>
+      <div class="gameCard" onclick="loadGame('/game/clashroyale')">
+        <img src="/images/clashroyale.png">
+        <div class="gameTitle">Clash Royale</div>
+      </div>
+      <div class="gameCard" onclick="loadGame('/game/driftboss')">
+        <img src="/images/driftboss.png">
+        <div class="gameTitle">Drift Boss</div>
+      </div>
+      <div class="gameCard" onclick="loadGame('/game/eaglercraft')">
+        <img src="/images/eaglercraft.png">
+        <div class="gameTitle">Eaglercraft</div>
+      </div>
+      <div class="gameCard" onclick="loadGame('/game/geometrydash')">
+        <img src="/images/geometrydash.png">
+        <div class="gameTitle">Geometry Dash</div>
+      </div>
+      <div class="gameCard" onclick="loadGame('/game/grindcraft')">
+        <img src="/images/grindcraft.png">
+        <div class="gameTitle">Grindcraft</div>
+      </div>
+      <div class="gameCard" onclick="loadGame('/games/hollowknight')">
+        <img src="/images/hollowknight.png">
+        <div class="gameTitle">Hollow Knight</div>
+      </div>
+      <div class="gameCard" onclick="loadGame('/game/monkeymart')">
+        <img src="/images/monkeymart.png">
+        <div class="gameTitle">Monkey Mart</div>
+      </div>
+      <div class="gameCard" onclick="loadGame('/game/paperminecraft')">
+        <img src="/images/paperminecraft.png">
+        <div class="gameTitle">Paper Minecraft</div>
+      </div>
+      <div class="gameCard" onclick="loadGame('/game/ragdollarchers')">
+        <img src="/images/ragdollarchers.png">
+        <div class="gameTitle">Ragdoll Archers</div>
+      </div>
+      <div class="gameCard" onclick="loadGame('/game/ragdollhit')">
+        <img src="/images/ragdollhit.png">
+        <div class="gameTitle">Ragdoll Hit</div>
+      </div>
+      <div class="gameCard" onclick="loadGame('/game/rocketleague')">
+        <img src="/images/rocketleague.png">
+        <div class="gameTitle">Rocket League</div>
+      </div>
+      <div class="gameCard" onclick="loadGame('/game/run3')">
+        <img src="/images/run3.png">
+        <div class="gameTitle">Run 3</div>
+      </div>
+      <div class="gameCard" onclick="loadGame('/game/smashcarts')">
+        <img src="/images/smashcarts.png">
+        <div class="gameTitle">Smash Carts</div>
+      </div>
+      <div class="gameCard" onclick="loadGame('/game/snowrider')">
+        <img src="/images/snowrider.png">
+        <div class="gameTitle">Snow Rider 3D</div>
+      </div>
+      <div class="gameCard" onclick="loadGame('/game/soccerrandom')">
+        <img src="/images/soccerrandom.png">
+        <div class="gameTitle">Soccer Random</div>
+      </div>
+      <div class="gameCard" onclick="loadGame('/game/survivalrace')">
+        <img src="/images/survivalrace.png">
+        <div class="gameTitle">Survival Race</div>
+      </div>
+      <div class="gameCard" onclick="loadGame('/game/survivorio')">
+        <img src="/images/survivorio.png">
+        <div class="gameTitle">Survivor Io</div>
+      </div>
+      <div class="gameCard" onclick="loadGame('/game/thefinalearth2')">
+        <img src="/images/thefinalearth2.png">
+        <div class="gameTitle">The Final Earth 2</div>
+      </div>
+      <div class="gameCard" onclick="loadGame('/game/tombofthemask')">
+        <img src="/images/tombofthemask.png">
+        <div class="gameTitle">Tomb of the Mask</div>
+      </div>
+      <div class="gameCard" onclick="loadGame('/game/yohohoio')">
+        <img src="/images/yohohoio.png">
+        <div class="gameTitle">Yohoho Io</div>
+      </div>
     </div>
-    <iframe id="contentFrame"></iframe>
+  </div>
+
+  <div id="appsContent">
+    <input type="text" class="searchBar" id="appsSearchBar" placeholder="Search for an app...">
+    <div class="linksContainer" id="appsLinksContainer">
+      <div class="gameCard" onclick="loadGame('/app/ai')">
+        <img src="/images/ai.png">
+        <div class="gameTitle">AI</div>
+      </div>
+      <div class="gameCard" onclick="loadGame('/app/bgremover')">
+        <img src="/images/bgremover.png">
+        <div class="gameTitle">Background Remover</div>
+      </div>
+      <div class="gameCard" onclick="loadGame('/app/browser')">
+        <img src="/images/browser.png">
+        <div class="gameTitle">Browser</div>
+      </div>
+      <div class="gameCard" onclick="loadGame('/app/codeblanker')">
+        <img src="/images/codeblanker.png">
+        <div class="gameTitle">Code Blanker</div>
+      </div>
+      <div class="gameCard" onclick="loadGame('/app/codeedit')">
+        <img src="/images/codeedit.png">
+        <div class="gameTitle">Code Editor</div>
+      </div>
+          <div class="gameCard" onclick="loadGame('/app/codelinkmaker')">
+        <img src="/images/codelinkmaker.png">
+        <div class="gameTitle">Code Link Maker</div>
+      </div>
+      <div class="gameCard" onclick="loadGame('/app/elements')">
+        <img src="/images/elements.png">
+        <div class="gameTitle">Elements</div>
+      </div>
+      <div class="gameCard" onclick="loadGame('/app/fileconverter')">
+        <img src="/images/fileconverter.png">
+        <div class="gameTitle">File Converter</div>
+      </div>
+      <div class="gameCard" onclick="loadGame('/app/freedns')">
+        <img src="/images/freedns.png">
+        <div class="gameTitle">Free DNS</div>
+      </div>
+      <div class="gameCard" onclick="loadGame('/app/gimkithacks')">
+        <img src="/images/gimkithacks.png">
+        <div class="gameTitle">Gimkit with Hacks</div>
+        </div>
+      <div class="gameCard" onclick="loadGame('/app/mtglife')">
+        <img src="/images/mtglife.png">
+        <div class="gameTitle">MTG Life Counter</div>
+            </div>
+      <div class="gameCard" onclick="loadGame('/app/sandbox')">
+        <img src="/images/sandbox.png">
+        <div class="gameTitle">Sandbox</div>
+      </div>
+      <div class="gameCard" onclick="loadGame('/app/webcrawler')">
+        <img src="/images/webcrawler.png">
+        <div class="gameTitle">Link Viewer</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="minecraftContent">
+    <input type="text" class="searchBar" id="minecraftSearchBar" placeholder="Search for something...">
+    <div class="linksContainer" id="minecraftLinksContainer">
+      <div class="gameCard" onclick="loadGame('/minecraft/fate')">
+        <div class="gameTitle">Minecraft h Launcher</div>
+      </div>
+          <div class="gameCard" onclick="loadGame('/minecraft/borion')">
+        <div class="gameTitle">Minecraft h New</div>
+      </div>
+          <div class="gameCard" onclick="loadGame('/minecraft/horion')">
+        <div class="gameTitle">Minecraft h Old</div>
+      </div>
+          <div class="gameCard" onclick="loadGame('/minecraft/actualminecraft')">
+        <div class="gameTitle">Real Minecraft</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="linksContent">
+    <div id="linksMainContent">
+      <h1>Current Links:</h1>
+      <h2>Proxies are being updated</h2>
+      <h2>Alternate SSP Links</h2>
+      <a href="https://hereclicklink.vercel.app" target="_blank" class="line" style="animation-delay: 12s;">hereclicklink.vercel.app</a>
+      <a href="https://sspv3play.vercel.app" target="_blank" class="line" style="animation-delay: 12.5s;">sspv3play.vercel.app</a>
+      <a href="https://n8yfgsidfumsafdiuasdyhfsaidufhsadim.vercel.app/" target="_blank" class="line" style="animation-delay: 13.5s;">n8yfgsidfumsafdiuasdyhfsaidufhsadim.vercel.app/</a>
+      <a href="https://sspv2play.neocities.org/" target="_blank" class="line" style="animation-delay: 13.5s;">sspv2play.neocities.org</a>
+    </div>
+  </div>
+
+  <div id="requestContent">
+    <h1>Request/Report</h1>
+    <div id="requestFormContainer">
+      <iframe id="requestIframe" src="about:blank"></iframe>
+    </div>
+  </div>
+
+  <div id="proxyContent">
+    <iframe id="proxyIframe" src="about:blank"></iframe>
+  </div>
+
+  <div id="creditsContent">
+    <div class="creditLine" style="animation-delay: 0s;">Credits:</div>
+    <a href="https://www.youtube.com/@KaibotVR" target="_blank" rel="noopener noreferrer" class="creditLine" style="animation-delay: 0.5s;">Subscribe to KaibotVR on YouTube</a>
+    <a href="https://youtube.com/@WavezGT" target="_blank" rel="noopener noreferrer" class="creditLine" style="animation-delay: 1.5s;">Subscribe to WavezGT on YouTube</a>
+    <div class="creditLine" style="animation-delay: 2s;">Friend me on Minecraft</div>
+    <div class="creditLine" style="animation-delay: 2.5s;">Main Minecraft Accounts: TempestBlock and EntityXError</div>
+    <div class="creditLine" style="animation-delay: 3s;">Other Minecraft Accounts: XVoidVortexX, DipolarJungle, XShadow989X, XVoidVortex989X</div>
+    <a href="https://scratch.mit.edu/users/griffpatch/" target="_blank" rel="noopener noreferrer" class="creditLine" style="animation-delay: 3.5s;">Thanks to Griffpatch for some scratch games</a>
+    <a href="https://www.nitrotype.com/team/XERROR" target="_blank" rel="noopener noreferrer" class="creditLine" style="animation-delay: 4s;">Join my Nitro type team we are doing very good and we are in the legend league</a>
+    <div class="creditLine" style="animation-delay: 4.5s;">Thanks to Interstellar for the proxy backend</div>
+    <div class="creditLine" style="animation-delay: 5s;">Not all of these games/apps are mine — they belong to their owners.</div>
+  </div>
+
+  <iframe id="contentFrame"></iframe>
 </div>
 
 <script>
 (function(){
-
+// Auth Elements
 const authOverlay = document.getElementById('authOverlay');
 const loginForm = document.getElementById('loginForm');
 const signupForm = document.getElementById('signupForm');
 const toggleAuthBtn = document.getElementById('toggleAuthBtn');
 const authTitle = document.getElementById('authTitle');
 const authMessage = document.getElementById('authMessage');
+
+// Settings Elements
+const clock = document.getElementById('clock');
+const settingsMenu = document.getElementById('settingsMenu');
+const settingsIcon = document.getElementById('settingsIcon');
+const glowColorInput = document.getElementById('glowColor');
+const toggleFullscreen = document.getElementById('toggleFullscreen');
+const adminPanelBtn = document.getElementById('adminPanelBtn');
 const logoutBtn = document.getElementById('logoutBtn');
+
+// Content Elements
+const homeContent = document.getElementById('homeContent');
+const gamesContent = document.getElementById('gamesContent');
+const appsContent = document.getElementById('appsContent');
+const minecraftContent = document.getElementById('minecraftContent');
+const linksContent = document.getElementById('linksContent');
+const requestContent = document.getElementById('requestContent');
+const proxyContent = document.getElementById('proxyContent');
+const creditsContent = document.getElementById('creditsContent');
 const adminDashboard = document.getElementById('adminDashboard');
-const mainContent = document.getElementById('mainContent');
+const contentFrame = document.getElementById('contentFrame');
+const titleHeader = document.getElementById('titleHeader');
+const proxyIframe = document.getElementById('proxyIframe');
+const requestIframe = document.getElementById('requestIframe');
 
 let isLoginMode = true;
 let heartbeatInterval;
 
-// Check Login & Role via JWT Payload decoding
+// --- AUTH LOGIC ---
 function checkLoginStatus() {
     const token = localStorage.getItem('token');
     const role = localStorage.getItem('role');
@@ -145,18 +455,15 @@ function checkLoginStatus() {
         logoutBtn.style.display = 'block';
         
         if (role === 'admin') {
-            mainContent.style.display = 'none';
-            adminDashboard.style.display = 'block';
-            loadAdminData();
+            adminPanelBtn.style.display = 'block';
         } else {
-            mainContent.style.display = 'block';
-            adminDashboard.style.display = 'none';
-            startHeartbeat();
+            adminPanelBtn.style.display = 'none';
         }
+        startHeartbeat();
     } else {
         authOverlay.style.display = 'flex';
         logoutBtn.style.display = 'none';
-        adminDashboard.style.display = 'none';
+        adminPanelBtn.style.display = 'none';
         clearInterval(heartbeatInterval);
     }
 }
@@ -178,7 +485,6 @@ toggleAuthBtn.addEventListener('click', () => {
     }
 });
 
-// Login
 loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const username = document.getElementById('loginUser').value;
@@ -206,7 +512,6 @@ loginForm.addEventListener('submit', async (e) => {
     }
 });
 
-// Sign Up
 signupForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const username = document.getElementById('signupUser').value;
@@ -237,38 +542,44 @@ logoutBtn.addEventListener('click', () => {
     localStorage.removeItem('token');
     localStorage.removeItem('role');
     authMessage.innerText = "Logged out securely.";
+    hideAllSections();
+    homeContent.style.display = "block";
     checkLoginStatus();
 });
 
 // --- ADMIN SYSTEM ---
 async function loadAdminData() {
     const token = localStorage.getItem('token');
-    const response = await fetch('/admin/users', {
-        headers: { 'Authorization': `Bearer ${token}` }
-    });
-    const users = await response.json();
-    const tbody = document.getElementById('adminUserTableBody');
-    tbody.innerHTML = '';
+    try {
+        const response = await fetch('/admin/users', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const users = await response.json();
+        const tbody = document.getElementById('adminUserTableBody');
+        tbody.innerHTML = '';
 
-    users.forEach(user => {
-        const statusText = user.is_banned ? 'BANNED' : (user.is_approved ? 'Approved' : 'Pending');
-        const onlineBadge = user.is_online ? `<span class="statusBadge online">Online</span>` : `<span class="statusBadge offline">Offline</span>`;
-        
-        let actionButtons = '';
-        if (!user.is_approved) actionButtons += `<button class="adminActionBtn btn-approve" onclick="adminAction(${user.id}, 'approve')">Approve</button>`;
-        if (!user.is_banned) actionButtons += `<button class="adminActionBtn btn-ban" onclick="adminAction(${user.id}, 'ban')">Ban</button>`;
-        if (user.is_banned) actionButtons += `<button class="adminActionBtn btn-unban" onclick="adminAction(${user.id}, 'unban')">Unban</button>`;
+        users.forEach(user => {
+            const statusText = user.is_banned ? 'BANNED' : (user.is_approved ? 'Approved' : 'Pending');
+            const onlineBadge = user.is_online ? `<span class="statusBadge online">Online</span>` : `<span class="statusBadge offline">Offline</span>`;
+            
+            let actionButtons = '';
+            if (!user.is_approved) actionButtons += `<button class="adminActionBtn btn-approve" onclick="adminAction(${user.id}, 'approve')">Approve</button>`;
+            if (!user.is_banned) actionButtons += `<button class="adminActionBtn btn-ban" onclick="adminAction(${user.id}, 'ban')">Ban</button>`;
+            if (user.is_banned) actionButtons += `<button class="adminActionBtn btn-unban" onclick="adminAction(${user.id}, 'unban')">Unban</button>`;
 
-        tbody.innerHTML += `
-            <tr>
-                <td>${user.username}</td>
-                <td>${user.email}</td>
-                <td>${statusText}</td>
-                <td>${onlineBadge}</td>
-                <td>${actionButtons}</td>
-            </tr>
-        `;
-    });
+            tbody.innerHTML += `
+                <tr>
+                    <td>${user.username}</td>
+                    <td>${user.email}</td>
+                    <td>${statusText}</td>
+                    <td>${onlineBadge}</td>
+                    <td>${actionButtons}</td>
+                </tr>
+            `;
+        });
+    } catch(err) {
+        console.error("Could not load admin data.");
+    }
 }
 
 window.adminAction = async function(userId, action) {
@@ -281,18 +592,16 @@ window.adminAction = async function(userId, action) {
     loadAdminData(); // Refresh table
 };
 
-// --- HEARTBEAT PING (Tracks Online Users) ---
 function startHeartbeat() {
     const token = localStorage.getItem('token');
-    // Ping the server right away, and then every 30 seconds
     fetch('/heartbeat', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }});
     heartbeatInterval = setInterval(() => {
         fetch('/heartbeat', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }});
     }, 30000);
 }
 
-// Visuals
-const clock = document.getElementById('clock');
+
+// --- BASE SITE LOGIC ---
 function updateClock(){
   const now = new Date();
   let h = now.getHours();
@@ -305,45 +614,322 @@ function updateClock(){
 setInterval(updateClock, 1000);
 updateClock();
 
-window.goHome = function() {
-    document.getElementById('contentFrame').style.display = "none";
-    document.getElementById('homeContent').style.display = "block";
-};
-window.refreshFrame = function() {
-    const frame = document.getElementById('contentFrame');
-    if(frame.style.display === "block") frame.src = frame.src;
+function hideAllSections() {
+  homeContent.style.display = "none";
+  gamesContent.style.display = "none";
+  appsContent.style.display = "none";
+  minecraftContent.style.display = "none";
+  linksContent.style.display = "none";
+  requestContent.style.display = "none";
+  proxyContent.style.display = "none";
+  creditsContent.style.display = "none";
+  adminDashboard.style.display = "none";
+  contentFrame.style.display = "none";
+}
+
+window.loadGame = function(url) {
+  hideAllSections();
+  contentFrame.style.display = "block";
+  contentFrame.src = url;
+}
+
+window.showGames = function() { hideAllSections(); gamesContent.style.display = "block"; contentFrame.src = ""; };
+window.showApps = function() { hideAllSections(); appsContent.style.display = "block"; contentFrame.src = ""; };
+window.showMinecraft = function() { hideAllSections(); minecraftContent.style.display = "block"; contentFrame.src = ""; };
+
+window.showLinks = function() {
+  hideAllSections();
+  linksContent.style.display = "block";
+  contentFrame.src = "";
+  const lines = document.querySelectorAll('#linksContent .line');
+  lines.forEach((line) => {
+    line.style.animation = 'none';
+    line.offsetHeight;
+    line.style.animation = null;
+  });
 };
 
-// Particles Background Script 
+window.showRequest = function() {
+  hideAllSections();
+  requestContent.style.display = "block";
+  requestIframe.src = "https://docs.google.com/forms/d/e/1FAIpQLSe-upLodzjs0kcV1UPaGuR0Rykqf7xrog7LHunUkNaORu0HaA/viewform";
+};
+
+window.showProxy = function() {
+  hideAllSections();
+  proxyContent.style.display = "block";
+  proxyIframe.src = "https://fffsssffss1.vercel.app/a/hvtrs8%2F-sqpt2rlcy%2Cngoaivigs%2Copg-arp-bpousgr";
+};
+
+window.showCredits = function() {
+  hideAllSections();
+  creditsContent.style.display = "block";
+  contentFrame.src = "";
+  const lines = document.querySelectorAll('.creditLine');
+  lines.forEach(line => {
+    line.style.animation = 'none';
+    line.offsetHeight;
+    line.style.animation = null;
+  });
+};
+
+window.showAdmin = function() {
+  hideAllSections();
+  adminDashboard.style.display = "block";
+  settingsMenu.style.display = "none";
+  loadAdminData();
+}
+
+// Settings
+settingsIcon.onclick = function(e) {
+  e.stopPropagation();
+  settingsMenu.style.display = settingsMenu.style.display === "block" ? "none" : "block";
+};
+document.addEventListener("click", (e) => {
+  if (!settingsMenu.contains(e.target) && e.target !== settingsIcon) {
+    settingsMenu.style.display = "none";
+  }
+});
+
+const saved = JSON.parse(localStorage.getItem("sspSettings")) || {glow: true, clock: true};
+const savedExtra = JSON.parse(localStorage.getItem("sspExtraSettings")) || {glowColor: "#9b59b6", fullscreen: false};
+
+const toggleGlow = document.getElementById("toggleGlow");
+const toggleClock = document.getElementById("toggleClock");
+
+toggleGlow.checked = saved.glow;
+toggleClock.checked = saved.clock;
+
+function applySettings(s) {
+  s.glow ? document.body.classList.remove("noGlow") : document.body.classList.add("noGlow");
+  clock.style.display = s.clock ? "block" : "none";
+}
+
+function saveSettings() {
+  const s = {glow: toggleGlow.checked, clock: toggleClock.checked};
+  localStorage.setItem("sspSettings", JSON.stringify(s));
+  applySettings(s);
+}
+
+toggleGlow.onchange = saveSettings;
+toggleClock.onchange = saveSettings;
+
+function applyExtraSettings(s) {
+  document.documentElement.style.setProperty('--glow-color', s.glowColor);
+  glowColorInput.value = s.glowColor;
+  toggleFullscreen.checked = s.fullscreen;
+  if (s.fullscreen && !document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  }
+}
+
+function saveExtraSettings() {
+  const s = {glowColor: glowColorInput.value, fullscreen: toggleFullscreen.checked};
+  localStorage.setItem("sspExtraSettings", JSON.stringify(s));
+  applyExtraSettings(s);
+}
+
+glowColorInput.onchange = saveExtraSettings;
+toggleFullscreen.onchange = () => {
+  toggleFullscreen.checked ? 
+    document.documentElement.requestFullscreen().catch(() => {}) : 
+    document.exitFullscreen().catch(() => {});
+  saveExtraSettings();
+};
+
+applySettings(saved);
+applyExtraSettings(savedExtra);
+
+window.addEventListener('contextmenu', e => e.preventDefault());
+titleHeader.onclick = () => {
+  hideAllSections();
+  homeContent.style.display = "block";
+  contentFrame.src = "";
+};
+
+// Search functionality
+function setupSearch(searchInputId, containerId) {
+  const searchBar = document.getElementById(searchInputId);
+  const container = document.getElementById(containerId);
+  const cards = container.querySelectorAll(".gameCard");
+  searchBar.addEventListener("input", () => {
+    const searchText = searchBar.value.toLowerCase();
+    cards.forEach(card => {
+      const title = card.querySelector(".gameTitle").textContent.toLowerCase();
+      card.style.display = title.includes(searchText) ? "flex" : "none";
+    });
+  });
+}
+setupSearch('gamesSearchBar', 'gamesLinksContainer');
+setupSearch('appsSearchBar', 'appsLinksContainer');
+setupSearch('minecraftSearchBar', 'minecraftLinksContainer');
+
+// Tools
+window.runTool = function(type) {
+  switch(type) {
+    case 'autoclicker':
+      fetch('https://cdn.jsdelivr.net/gh/wea-f/Norepted@a4cd53b/bookmarklets/autoclicker.js')
+        .then(r => r.text()).then(eval);
+      break;
+    case 'asteroids':
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/gh/skysthelimitt/Selenite/js/asteroids.min.js';
+      document.body.appendChild(s);
+      break;
+    case 'edit':
+      document.body.contentEditable = document.body.contentEditable === "true" ? "false" : "true";
+      break;
+  }
+};
+
+// Particle effects
 const canvas = document.getElementById('particleCanvas');
 const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
-window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
-let particles = [];
+
+window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
+
+let particles = [], sparkles = [];
+const maxParticles = 300, maxSparkles = 50;
+let mouse = {x: canvas.width/2, y: canvas.height/2};
+
+window.addEventListener('mousemove', e => {
+  mouse.x = e.clientX;
+  mouse.y = e.clientY;
+});
+
 function spawnParticle() {
+  const edge = Math.floor(Math.random() * 4);
+  let x, y;
+  switch(edge) {
+    case 0: x = Math.random() * canvas.width; y = 0; break;
+    case 1: x = canvas.width; y = Math.random() * canvas.height; break;
+    case 2: x = Math.random() * canvas.width; y = canvas.height; break;
+    case 3: x = 0; y = Math.random() * canvas.height; break;
+  }
   particles.push({
-    x: Math.random() * canvas.width, y: canvas.height,
-    size: 2 + Math.random() * 5, speed: 0.5 + Math.random() * 1,
-    opacity: 0.2 + Math.random() * 0.5
+    x, y,
+    size: 2 + Math.random() * 5,
+    speed: 0.3 + Math.random() * 0.5,
+    opacity: 0.2 + Math.random() * 0.5,
+    angle: Math.random() * 360
   });
-  if (particles.length > 100) particles.shift();
+  if (particles.length > maxParticles) particles.shift();
 }
+
+function spawnSparkles() {
+  if (Math.random() < 0.2 && sparkles.length < maxSparkles) {
+    sparkles.push({
+      x: mouse.x + Math.random() * 50 - 25,
+      y: mouse.y + Math.random() * 50 - 25,
+      size: 1 + Math.random() * 3,
+      opacity: 0.2 + Math.random() * 0.5
+    });
+  }
+}
+
+function addClickParticles(e) {
+  for (let i = 0; i < 5; i++) {
+    particles.push({
+      x: mouse.x + Math.random() * 20 - 10,
+      y: mouse.y + Math.random() * 20 - 10,
+      size: 2 + Math.random() * 4,
+      speed: 0.3 + Math.random() * 0.5,
+      opacity: 0.3 + Math.random() * 0.5,
+      angle: Math.random() * 360
+    });
+  }
+}
+
+canvas.addEventListener('mousedown', addClickParticles);
+canvas.addEventListener('mousemove', e => { if (e.buttons) addClickParticles(e); });
+
 function animate() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = 'rgba(0,0,0,0.15)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
   particles.forEach((p, i) => {
-      p.y -= p.speed;
+    const dx = mouse.x - p.x, dy = mouse.y - p.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > 3) {
+      p.x += dx * 0.03;
+      p.y += dy * 0.03;
+      p.angle += 0.1;
+      
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.angle);
       ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--glow-color').trim();
       ctx.globalAlpha = p.opacity;
-      ctx.fillRect(p.x, p.y, p.size, p.size);
-      if(p.y < 0) particles.splice(i, 1);
+      ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+      ctx.restore();
+    } else {
+      particles.splice(i, 1);
+    }
   });
+  
+  sparkles.forEach((s, i) => {
+    s.opacity -= 0.01;
+    if (s.opacity <= 0) {
+      sparkles.splice(i, 1);
+      return;
+    }
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--glow-color').trim();
+    ctx.globalAlpha = s.opacity;
+    ctx.fillRect(s.x, s.y, s.size, s.size);
+  });
+  
   spawnParticle();
+  spawnSparkles();
   requestAnimationFrame(animate);
 }
 animate();
 
 })();
+
+// FULLSCREEN CURRENT VIEW (GAME / PROXY / REQUEST)
+window.fullscreenFrame = function() {
+  const frame = document.getElementById("contentFrame");
+  const proxy = document.getElementById("proxyIframe");
+  const request = document.getElementById("requestIframe");
+
+  let active = null;
+
+  if (frame.style.display === "block") {
+    active = frame;
+  } else if (document.getElementById("proxyContent").style.display === "block") {
+    active = proxy;
+  } else if (document.getElementById("requestContent").style.display === "block") {
+    active = request;
+  }
+
+  if (!active) return;
+
+  if (!document.fullscreenElement) {
+    active.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen().catch(() => {});
+  }
+};
+
+// REFRESH CURRENT VIEW
+window.refreshFrame = function() {
+  const frame = document.getElementById("contentFrame");
+  const proxy = document.getElementById("proxyIframe");
+  const request = document.getElementById("requestIframe");
+
+  if (frame.style.display === "block") {
+    frame.src = frame.src;
+  } else if (document.getElementById("proxyContent").style.display === "block") {
+    proxy.src = proxy.src;
+  } else if (document.getElementById("requestContent").style.display === "block") {
+    request.src = request.src;
+  }
+};
 </script>
 </body>
 </html>
