@@ -1,35 +1,705 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Secure App</title>
-    <style>
-        body { font-family: sans-serif; padding: 20px; }
-        form { margin-bottom: 20px; }
-        input { display: block; margin-bottom: 10px; padding: 8px; }
-        #message { font-weight: bold; color: blue; margin-top: 20px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shadow Sites Plus</title>
+<link rel="icon" href="SSP.png" type="image/x-icon">
+<style>
+:root { --glow-color: #9b59b6; }
+
+body {
+  margin:0; font-family:Arial,Helvetica,sans-serif;
+  background:black; color:white; overflow:hidden; text-align:center; position:relative;
+  user-select:none;
+}
+
+img { -webkit-user-drag: none; user-drag: none; user-select: none; }
+
+/* --- AUTHENTICATION OVERLAY (NEW) --- */
+#authOverlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0, 0, 0, 0.85); /* Darkens the background */
+  backdrop-filter: blur(8px); /* Blurs the site behind it */
+  z-index: 9999; /* Keeps it on top of absolutely everything */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#authBox {
+  background: #111;
+  border: 2px solid var(--glow-color);
+  border-radius: 15px;
+  padding: 40px;
+  width: 320px;
+  box-shadow: 0 0 30px var(--glow-color);
+  text-align: center;
+  animation: glowPulse 2s infinite alternate;
+}
+
+#authBox h2 {
+  color: #e0c3fc;
+  text-shadow: 0 0 10px var(--glow-color);
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+#authMessage {
+  color: #d580ff;
+  font-weight: bold;
+  margin-bottom: 15px;
+  text-shadow: 0 0 5px var(--glow-color);
+  min-height: 20px;
+}
+
+.authInput {
+  width: 90%;
+  padding: 12px;
+  margin-bottom: 15px;
+  border-radius: 8px;
+  border: 2px solid var(--glow-color);
+  background: #000;
+  color: #e0c3fc;
+  outline: none;
+  box-shadow: inset 0 0 5px var(--glow-color);
+  transition: 0.3s;
+}
+
+.authInput:focus {
+  box-shadow: 0 0 15px var(--glow-color), inset 0 0 10px var(--glow-color);
+}
+
+.authBtn {
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  border: 2px solid var(--glow-color);
+  color: #e0c3fc;
+  font-weight: bold;
+  font-size: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.3s;
+  text-shadow: 0 0 5px var(--glow-color);
+}
+
+.authBtn:hover {
+  background: var(--glow-color);
+  color: white;
+  box-shadow: 0 0 20px var(--glow-color);
+}
+
+.toggleAuth {
+  margin-top: 15px;
+  font-size: 0.9rem;
+  color: #a020f0;
+  cursor: pointer;
+  text-decoration: underline;
+  transition: 0.2s;
+}
+
+.toggleAuth:hover {
+  color: #e0c3fc;
+  text-shadow: 0 0 10px var(--glow-color);
+}
+/* ----------------------------------- */
+
+#particleCanvas { position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index:0; }
+
+#topBar { position:fixed; top:0; left:0; width:100%; height:70px; background:black; z-index:1000;
+  box-shadow:0 0 20px var(--glow-color); display:flex; align-items:center; justify-content:center; gap:20px; }
+#topBar h1 { margin:0; font-size:1.5rem; color:#e0c3fc;
+  text-shadow:0 0 10px var(--glow-color); animation:pulseText 2s infinite alternate; cursor:pointer; user-select:none; }
+#topBar a { cursor:pointer; font-weight:bold; background:none; border:none; color:#e0c3fc;
+  text-decoration:none; text-shadow:0 0 8px var(--glow-color); transition:0.2s; user-select:none; }
+#topBar a:hover { color:#fff; text-shadow:0 0 15px var(--glow-color); }
+
+#clock { position:fixed; bottom:20px; right:20px; font-size:1rem; color:#a020f0;
+  background:rgba(0,0,0,0.7); padding:6px 10px; border-radius:6px; z-index:2000; box-shadow:0 0 10px var(--glow-color); }
+
+#settingsIcon { position:fixed; bottom:20px; left:20px; width:50px; height:50px; cursor:pointer; z-index:2000;
+  filter:drop-shadow(0 0 10px var(--glow-color)); animation:glowPulse 2s infinite alternate; }
+#settingsMenu { position:fixed; bottom:90px; left:20px; width:260px; background:black; border:2px solid var(--glow-color);
+  border-radius:12px; padding:15px; display:none; z-index:3000; box-shadow:0 0 20px var(--glow-color); max-height:70vh; overflow-y:auto; user-select:none; }
+#settingsMenu h3 { margin:10px 0; color:#e0c3fc; border-bottom:1px solid var(--glow-color); padding-bottom:5px; }
+#settingsMenu label { display:block; margin:12px 0; cursor:pointer; user-select:none; }
+.tool-btn { display:block; width:100%; padding:8px; margin:8px 0; background:transparent; border:1px solid var(--glow-color);
+  color:#e0c3fc; border-radius:5px; cursor:pointer; font-weight:bold; transition:0.3s; user-select:none; }
+.tool-btn:hover { background:var(--glow-color); color:white; box-shadow:0 0 10px var(--glow-color); }
+
+#mainContent { position:absolute; top:70px; left:0; width:100%; height:calc(100vh - 70px); overflow:hidden; z-index:1; }
+#homeContent { margin-top:40px; z-index:2; position:relative; user-select:none; }
+#homeContent h2 { color:#e0c3fc; text-shadow:0 0 10px var(--glow-color); animation:pulseText 2s infinite alternate; }
+#contentFrame { width:100%; height:100%; border:none; display:none; z-index:2; }
+
+#gamesContent, #appsContent, #minecraftContent, #linksContent, #requestContent { display:none; width:100%; height:100%; overflow-y:auto; padding-top:20px; box-sizing:border-box; padding-bottom:40px; z-index:2; position:relative; }
+.searchBar { padding:10px 15px; width:60%; max-width:400px; font-size:1rem; margin:10px auto 30px auto; border-radius:10px; border:2px solid var(--glow-color); background-color:#111; color:#e0c3fc; box-shadow:0 0 10px var(--glow-color), inset 0 0 5px var(--glow-color); outline:none; transition:0.3s; display:block; }
+.searchBar:focus { box-shadow:0 0 20px var(--glow-color), inset 0 0 10px var(--glow-color); }
+.linksContainer { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:20px; max-width:1000px; margin:0 auto; padding:0 20px; }
+.gameCard { background:#111; border-radius:15px; padding:20px 10px; cursor:pointer; transition:0.3s; box-shadow:0 0 10px var(--glow-color); display:flex; flex-direction:column; justify-content:center; align-items:center; }
+.gameCard:hover { transform:scale(1.05); box-shadow:0 0 25px var(--glow-color); }
+.gameCard img { width:100%; aspect-ratio:1/1; object-fit:cover; border-radius:10px; margin-bottom:8px; }
+.gameTitle { font-size:0.9rem; text-shadow:0 0 8px var(--glow-color); }
+
+#linksContent { overflow-y: auto; padding-top: 40px; padding-bottom: 80px; text-align: center; }
+#linksContent h1, #linksContent h2 { color: #e0c3fc; text-shadow: 0 0 10px #9b59b6, 0 0 20px #8e44ad; animation: glowPurple 2s infinite alternate; }
+#linksContent a.line { font-size: 1.5rem; text-decoration: none; display: block; margin: 1.5rem auto; max-width: 800px; color: #e0c3fc; text-shadow: 0 0 10px #d580ff, 0 0 20px #9b59b6; cursor: pointer; transition: transform 0.2s ease; }
+#linksContent a.line:hover { transform: scale(1.05); text-shadow: 0 0 15px #d580ff, 0 0 25px #9b59b6; }
+
+#requestContent { padding-top: 40px; padding-bottom: 40px; text-align: center; }
+#requestContent h1 { color: #e0c3fc; text-shadow: 0 0 10px var(--glow-color); animation: pulseText 2s infinite alternate; margin-bottom: 20px; }
+#requestFormContainer { width: 100%; height: calc(100vh - 140px); display: flex; justify-content: center; align-items: center; }
+#requestIframe { width: 100%; height: 100%; max-width: 900px; max-height: 700px; border: none; border-radius: 15px; box-shadow: 0 0 20px var(--glow-color); }
+
+#proxyContent { display:none; width:100%; height:100%; z-index:2; position:relative; padding:0 !important; }
+#proxyIframe { width:100%; height:100vh; border:none; display:block; position: absolute; top: 0; left: 0; }
+
+#creditsContent { display:none; width:100%; height:100%; overflow-y:auto; padding-top:40px; box-sizing:border-box; padding-bottom:80px; z-index:2; position:relative; user-select:text; }
+.creditLine { font-size:1.6rem; color:#e0c3fc; text-shadow:0 0 5px var(--glow-color), 0 0 10px var(--glow-color); animation:creditPulse 2s infinite alternate, fadeIn 1s forwards; margin:1.2rem 0; opacity:0; transition:transform 0.2s ease; text-decoration:none; display:block; }
+a.creditLine { cursor:pointer; }
+a.creditLine:hover { transform:scale(1.05); }
+
+.noGlow * { text-shadow:none !important; box-shadow:none !important; filter:none !important; animation:none !important; }
+
+@keyframes pulseText { 0%{ text-shadow:0 0 10px var(--glow-color),0 0 20px var(--glow-color); } 100%{ text-shadow:0 0 20px var(--glow-color),0 0 40px var(--glow-color); } }
+@keyframes glowPulse { 0%{ filter:drop-shadow(0 0 5px var(--glow-color)); box-shadow: 0 0 15px var(--glow-color); } 100%{ filter:drop-shadow(0 0 20px var(--glow-color)); box-shadow: 0 0 35px var(--glow-color); } }
+@keyframes creditPulse { 0% { text-shadow:0 0 5px var(--glow-color), 0 0 10px var(--glow-color); } 50% { text-shadow:0 0 15px #d580ff, 0 0 25px var(--glow-color); } 100% { text-shadow:0 0 5px var(--glow-color), 0 0 10px var(--glow-color); } }
+@keyframes fadeIn { to { opacity: 1; } }
+@keyframes glowPurple { 0% { text-shadow: 0 0 10px #9b59b6, 0 0 20px #8e44ad; } 100% { text-shadow: 0 0 20px #d580ff, 0 0 40px #9b59b6; } }
+
+#gamesContent::-webkit-scrollbar, #appsContent::-webkit-scrollbar, #creditsContent::-webkit-scrollbar, #minecraftContent::-webkit-scrollbar, #linksContent::-webkit-scrollbar, #requestContent::-webkit-scrollbar { width: 8px; }
+#gamesContent::-webkit-scrollbar-track, #appsContent::-webkit-scrollbar-track, #creditsContent::-webkit-scrollbar-track, #minecraftContent::-webkit-scrollbar-track, #linksContent::-webkit-scrollbar-track, #requestContent::-webkit-scrollbar-track { background: black; }
+#gamesContent::-webkit-scrollbar-thumb, #appsContent::-webkit-scrollbar-thumb, #creditsContent::-webkit-scrollbar-thumb, #minecraftContent::-webkit-scrollbar-thumb, #linksContent::-webkit-scrollbar-thumb, #requestContent::-webkit-scrollbar-thumb { background: var(--glow-color); border-radius: 4px; }
+.topBtn { padding:6px 10px; background:transparent; border:1px solid var(--glow-color); color:#e0c3fc; border-radius:6px; cursor:pointer; font-weight:bold; text-shadow:0 0 8px var(--glow-color); transition:0.2s; }
+.topBtn:hover { background:var(--glow-color); color:white; box-shadow:0 0 10px var(--glow-color); }
+</style>
 </head>
 <body>
 
-    <h2>Sign Up</h2>
-    <form id="signupForm">
-        <input type="text" id="signupUser" placeholder="Username" required>
-        <input type="password" id="signupPass" placeholder="Password" required>
-        <button type="submit">Create Account</button>
-    </form>
+<div id="authOverlay">
+  <div id="authBox">
+      <h2 id="authTitle">Log In to SSP</h2>
+      <div id="authMessage"></div>
+      
+      <form id="loginForm">
+          <input type="text" id="loginUser" class="authInput" placeholder="Username" required>
+          <input type="password" id="loginPass" class="authInput" placeholder="Password" required>
+          <button type="submit" class="authBtn">Log In</button>
+      </form>
 
-    <h2>Log In</h2>
-    <form id="loginForm">
-        <input type="text" id="loginUser" placeholder="Username" required>
-        <input type="password" id="loginPass" placeholder="Password" required>
-        <button type="submit">Log In</button>
-    </form>
+      <form id="signupForm" style="display: none;">
+          <input type="text" id="signupUser" class="authInput" placeholder="New Username" required>
+          <input type="password" id="signupPass" class="authInput" placeholder="New Password" required>
+          <button type="submit" class="authBtn">Create Account</button>
+      </form>
 
-    <div id="message"></div>
-    <button id="logoutBtn" style="display:none; margin-top: 10px;">Log Out</button>
+      <div id="toggleAuthBtn" class="toggleAuth">Need an account? Sign Up</div>
+  </div>
+</div>
+<canvas id="particleCanvas"></canvas>
+<div id="clock"></div>
+<img id="settingsIcon" src="/images/settings.png" alt="Settings">
 
-    <script src="app.js"></script> 
+<div id="settingsMenu">
+<h3>General</h3>
+<label><input type="checkbox" id="toggleGlow"> Glow Effects</label>
+<label><input type="checkbox" id="toggleClock"> Show Clock</label>
+<h3>Appearance</h3>
+<label>Glow Color: <input type="color" id="glowColor" value="#9b59b6"></label>
+<label><input type="checkbox" id="toggleFullscreen"> Fullscreen Mode</label>
+<h3>Tools</h3>
+<button class="tool-btn" onclick="runTool('autoclicker')">Autoclicker</button>
+<button class="tool-btn" onclick="runTool('asteroids')">Asteroids</button>
+<button class="tool-btn" onclick="runTool('edit')">Toggle Edit Mode</button>
+</div>
+
+<div id="topBar">
+<h1 id="titleHeader">Shadow Sites Plus</h1>
+<a onclick="showProxy()">Proxy</a>
+<a onclick="showGames()">Games</a>
+<a onclick="showApps()">Apps</a>
+<a onclick="showCredits()">Credits</a>
+<a onclick="showMinecraft()">Minecraft Stuff</a>
+<a onclick="showLinks()">Links</a>
+<a onclick="showRequest()">Request/Report</a>
+
+<button onclick="fullscreenFrame()" class="topBtn">Fullscreen</button>
+<button onclick="refreshFrame()" class="topBtn">Refresh</button>
+<button id="logoutBtn" class="topBtn" style="display:none; border-color: red;">Log Out</button>
+</div>
+
+<div id="mainContent">
+<div id="homeContent">
+<h2>Welcome to SSP</h2>
+<h2>If a page says "Page not Found" or "404 not Found" click "Go Home" and then right click on the page and click reload iframe</h2>
+<h2>Some pages like the proxy page and most of the links, are being updated. They can't be used for a while.</h2>
+</div>
+
+<div id="gamesContent">
+  <input type="text" class="searchBar" id="gamesSearchBar" placeholder="Search for a game...">
+  <div class="linksContainer" id="gamesLinksContainer">
+    <div class="gameCard" onclick="loadGame('/game/amongus')">
+      <div class="gameTitle">Among Us</div>
+    </div>
+    </div>
+</div>
+
+<div id="appsContent">
+  <input type="text" class="searchBar" id="appsSearchBar" placeholder="Search for an app...">
+  <div class="linksContainer" id="appsLinksContainer">
+    <div class="gameCard" onclick="loadGame('/app/ai')">
+      <div class="gameTitle">AI</div>
+    </div>
+    </div>
+</div>
+
+<div id="minecraftContent">
+  <input type="text" class="searchBar" id="minecraftSearchBar" placeholder="Search for something...">
+  <div class="linksContainer" id="minecraftLinksContainer">
+    <div class="gameCard" onclick="loadGame('/minecraft/actualminecraft')">
+      <div class="gameTitle">Real Minecraft</div>
+    </div>
+  </div>
+</div>
+
+<div id="linksContent">
+  <div id="linksMainContent">
+    <h1>Current Links:</h1>
+    <h2>Proxies are being updated</h2>
+    <h2>Alternate SSP Links</h2>
+    <a href="https://hereclicklink.vercel.app" target="_blank" class="line" style="animation-delay: 12s;">hereclicklink.vercel.app</a>
+  </div>
+</div>
+
+<div id="requestContent">
+  <h1>Request/Report</h1>
+  <div id="requestFormContainer">
+    <iframe id="requestIframe" src="about:blank"></iframe>
+  </div>
+</div>
+
+<div id="proxyContent">
+  <iframe id="proxyIframe" src="about:blank"></iframe>
+</div>
+
+<div id="creditsContent">
+  <div class="creditLine" style="animation-delay: 0s;">Credits:</div>
+  <a href="https://www.youtube.com/@KaibotVR" target="_blank" rel="noopener noreferrer" class="creditLine" style="animation-delay: 0.5s;">Subscribe to KaibotVR on YouTube</a>
+</div>
+
+<iframe id="contentFrame"></iframe>
+</div>
+
+<script>
+(function(){
+
+// --- AUTHENTICATION LOGIC ---
+const authOverlay = document.getElementById('authOverlay');
+const loginForm = document.getElementById('loginForm');
+const signupForm = document.getElementById('signupForm');
+const toggleAuthBtn = document.getElementById('toggleAuthBtn');
+const authTitle = document.getElementById('authTitle');
+const authMessage = document.getElementById('authMessage');
+const logoutBtn = document.getElementById('logoutBtn');
+
+let isLoginMode = true;
+
+// Check if user is logged in
+function checkLoginStatus() {
+    const token = localStorage.getItem('token');
+    if (token) {
+        authOverlay.style.display = 'none'; // Hide popup! Let them play.
+        logoutBtn.style.display = 'block'; // Show logout button
+    } else {
+        authOverlay.style.display = 'flex'; // Lock them out!
+        logoutBtn.style.display = 'none';
+    }
+}
+checkLoginStatus(); // Run immediately
+
+// Toggle between Sign Up and Log In forms
+toggleAuthBtn.addEventListener('click', () => {
+    isLoginMode = !isLoginMode;
+    authMessage.innerText = "";
+    if (isLoginMode) {
+        loginForm.style.display = 'block';
+        signupForm.style.display = 'none';
+        authTitle.innerText = 'Log In to SSP';
+        toggleAuthBtn.innerText = 'Need an account? Sign Up';
+    } else {
+        loginForm.style.display = 'none';
+        signupForm.style.display = 'block';
+        authTitle.innerText = 'Create SSP Account';
+        toggleAuthBtn.innerText = 'Already have an account? Log In';
+    }
+});
+
+// Handle Login Submission
+loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = document.getElementById('loginUser').value;
+    const password = document.getElementById('loginPass').value;
+    authMessage.innerText = "Logging in...";
+
+    try {
+        const response = await fetch('/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        const data = await response.json();
+        
+        if (data.token) {
+            localStorage.setItem('token', data.token); // Save token
+            authMessage.innerText = "Success!";
+            setTimeout(checkLoginStatus, 500); // Hide the popup after a half second
+        } else {
+            authMessage.innerText = data.error;
+        }
+    } catch (err) {
+        authMessage.innerText = "Server error. Try again later.";
+    }
+});
+
+// Handle Signup Submission
+signupForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = document.getElementById('signupUser').value;
+    const password = document.getElementById('signupPass').value;
+    authMessage.innerText = "Creating account...";
+
+    try {
+        const response = await fetch('/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        const data = await response.json();
+        
+        if (response.ok) {
+            authMessage.innerText = "Account created! You can now Log In.";
+            setTimeout(() => toggleAuthBtn.click(), 1500); // Auto-switch to login
+        } else {
+            authMessage.innerText = data.error;
+        }
+    } catch (err) {
+        authMessage.innerText = "Server error. Try again later.";
+    }
+});
+
+// Handle Logout
+logoutBtn.addEventListener('click', () => {
+    localStorage.removeItem('token');
+    authMessage.innerText = "You have been logged out.";
+    checkLoginStatus(); // Brings the popup back
+});
+// ----------------------------
+
+
+const clock = document.getElementById('clock');
+const settingsMenu = document.getElementById('settingsMenu');
+const settingsIcon = document.getElementById('settingsIcon');
+const glowColorInput = document.getElementById('glowColor');
+const toggleFullscreen = document.getElementById('toggleFullscreen');
+
+const homeContent = document.getElementById('homeContent');
+const gamesContent = document.getElementById('gamesContent');
+const appsContent = document.getElementById('appsContent');
+const minecraftContent = document.getElementById('minecraftContent');
+const linksContent = document.getElementById('linksContent');
+const requestContent = document.getElementById('requestContent');
+const proxyContent = document.getElementById('proxyContent');
+const creditsContent = document.getElementById('creditsContent');
+const contentFrame = document.getElementById('contentFrame');
+const titleHeader = document.getElementById('titleHeader');
+const proxyIframe = document.getElementById('proxyIframe');
+const requestIframe = document.getElementById('requestIframe');
+
+function updateClock(){
+  const now = new Date();
+  let h = now.getHours();
+  const m = String(now.getMinutes()).padStart(2,'0');
+  const s = String(now.getSeconds()).padStart(2,'0');
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  clock.textContent = `${h}:${m}:${s} ${ampm}`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+function hideAllSections() {
+  homeContent.style.display = "none";
+  gamesContent.style.display = "none";
+  appsContent.style.display = "none";
+  minecraftContent.style.display = "none";
+  linksContent.style.display = "none";
+  requestContent.style.display = "none";
+  proxyContent.style.display = "none";
+  creditsContent.style.display = "none";
+  contentFrame.style.display = "none";
+}
+
+window.loadGame = function(url) {
+  hideAllSections();
+  contentFrame.style.display = "block";
+  contentFrame.src = url;
+}
+
+window.showGames = function() { hideAllSections(); gamesContent.style.display = "block"; contentFrame.src = ""; };
+window.showApps = function() { hideAllSections(); appsContent.style.display = "block"; contentFrame.src = ""; };
+window.showMinecraft = function() { hideAllSections(); minecraftContent.style.display = "block"; contentFrame.src = ""; };
+window.showLinks = function() { hideAllSections(); linksContent.style.display = "block"; contentFrame.src = ""; };
+window.showRequest = function() { hideAllSections(); requestContent.style.display = "block"; requestIframe.src = "https://docs.google.com/forms/d/e/1FAIpQLSe-upLodzjs0kcV1UPaGuR0Rykqf7xrog7LHunUkNaORu0HaA/viewform"; };
+window.showProxy = function() { hideAllSections(); proxyContent.style.display = "block"; proxyIframe.src = "https://fffsssffss1.vercel.app/a/hvtrs8%2F-sqpt2rlcy%2Cngoaivigs%2Copg-arp-bpousgr"; };
+window.showCredits = function() { hideAllSections(); creditsContent.style.display = "block"; contentFrame.src = ""; };
+
+settingsIcon.onclick = function(e) {
+  e.stopPropagation();
+  settingsMenu.style.display = settingsMenu.style.display === "block" ? "none" : "block";
+};
+document.addEventListener("click", (e) => {
+  if (!settingsMenu.contains(e.target) && e.target !== settingsIcon) {
+    settingsMenu.style.display = "none";
+  }
+});
+
+const saved = JSON.parse(localStorage.getItem("sspSettings")) || {glow: true, clock: true};
+const savedExtra = JSON.parse(localStorage.getItem("sspExtraSettings")) || {glowColor: "#9b59b6", fullscreen: false};
+
+const toggleGlow = document.getElementById("toggleGlow");
+const toggleClock = document.getElementById("toggleClock");
+
+toggleGlow.checked = saved.glow;
+toggleClock.checked = saved.clock;
+
+function applySettings(s) {
+  s.glow ? document.body.classList.remove("noGlow") : document.body.classList.add("noGlow");
+  clock.style.display = s.clock ? "block" : "none";
+}
+
+function saveSettings() {
+  const s = {glow: toggleGlow.checked, clock: toggleClock.checked};
+  localStorage.setItem("sspSettings", JSON.stringify(s));
+  applySettings(s);
+}
+
+toggleGlow.onchange = saveSettings;
+toggleClock.onchange = saveSettings;
+
+function applyExtraSettings(s) {
+  document.documentElement.style.setProperty('--glow-color', s.glowColor);
+  glowColorInput.value = s.glowColor;
+  toggleFullscreen.checked = s.fullscreen;
+  if (s.fullscreen && !document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  }
+}
+
+function saveExtraSettings() {
+  const s = {glowColor: glowColorInput.value, fullscreen: toggleFullscreen.checked};
+  localStorage.setItem("sspExtraSettings", JSON.stringify(s));
+  applyExtraSettings(s);
+}
+
+glowColorInput.onchange = saveExtraSettings;
+toggleFullscreen.onchange = () => {
+  toggleFullscreen.checked ? 
+    document.documentElement.requestFullscreen().catch(() => {}) : 
+    document.exitFullscreen().catch(() => {});
+  saveExtraSettings();
+};
+
+applySettings(saved);
+applyExtraSettings(savedExtra);
+
+window.addEventListener('contextmenu', e => e.preventDefault());
+titleHeader.onclick = () => {
+  hideAllSections();
+  homeContent.style.display = "block";
+  contentFrame.src = "";
+};
+
+function setupSearch(searchInputId, containerId) {
+  const searchBar = document.getElementById(searchInputId);
+  const container = document.getElementById(containerId);
+  const cards = container.querySelectorAll(".gameCard");
+  searchBar.addEventListener("input", () => {
+    const searchText = searchBar.value.toLowerCase();
+    cards.forEach(card => {
+      const title = card.querySelector(".gameTitle").textContent.toLowerCase();
+      card.style.display = title.includes(searchText) ? "flex" : "none";
+    });
+  });
+}
+setupSearch('gamesSearchBar', 'gamesLinksContainer');
+setupSearch('appsSearchBar', 'appsLinksContainer');
+setupSearch('minecraftSearchBar', 'minecraftLinksContainer');
+
+window.runTool = function(type) {
+  switch(type) {
+    case 'autoclicker':
+      fetch('https://cdn.jsdelivr.net/gh/wea-f/Norepted@a4cd53b/bookmarklets/autoclicker.js')
+        .then(r => r.text()).then(eval);
+      break;
+    case 'asteroids':
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/gh/skysthelimitt/Selenite/js/asteroids.min.js';
+      document.body.appendChild(s);
+      break;
+    case 'edit':
+      document.body.contentEditable = document.body.contentEditable === "true" ? "false" : "true";
+      break;
+  }
+};
+
+const canvas = document.getElementById('particleCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
+
+let particles = [], sparkles = [];
+const maxParticles = 300, maxSparkles = 50;
+let mouse = {x: canvas.width/2, y: canvas.height/2};
+
+window.addEventListener('mousemove', e => {
+  mouse.x = e.clientX;
+  mouse.y = e.clientY;
+});
+
+function spawnParticle() {
+  const edge = Math.floor(Math.random() * 4);
+  let x, y;
+  switch(edge) {
+    case 0: x = Math.random() * canvas.width; y = 0; break;
+    case 1: x = canvas.width; y = Math.random() * canvas.height; break;
+    case 2: x = Math.random() * canvas.width; y = canvas.height; break;
+    case 3: x = 0; y = Math.random() * canvas.height; break;
+  }
+  particles.push({
+    x, y,
+    size: 2 + Math.random() * 5,
+    speed: 0.3 + Math.random() * 0.5,
+    opacity: 0.2 + Math.random() * 0.5,
+    angle: Math.random() * 360
+  });
+  if (particles.length > maxParticles) particles.shift();
+}
+
+function spawnSparkles() {
+  if (Math.random() < 0.2 && sparkles.length < maxSparkles) {
+    sparkles.push({
+      x: mouse.x + Math.random() * 50 - 25,
+      y: mouse.y + Math.random() * 50 - 25,
+      size: 1 + Math.random() * 3,
+      opacity: 0.2 + Math.random() * 0.5
+    });
+  }
+}
+
+function addClickParticles(e) {
+  for (let i = 0; i < 5; i++) {
+    particles.push({
+      x: mouse.x + Math.random() * 20 - 10,
+      y: mouse.y + Math.random() * 20 - 10,
+      size: 2 + Math.random() * 4,
+      speed: 0.3 + Math.random() * 0.5,
+      opacity: 0.3 + Math.random() * 0.5,
+      angle: Math.random() * 360
+    });
+  }
+}
+
+canvas.addEventListener('mousedown', addClickParticles);
+canvas.addEventListener('mousemove', e => { if (e.buttons) addClickParticles(e); });
+
+function animate() {
+  ctx.fillStyle = 'rgba(0,0,0,0.15)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  particles.forEach((p, i) => {
+    const dx = mouse.x - p.x, dy = mouse.y - p.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > 3) {
+      p.x += dx * 0.03;
+      p.y += dy * 0.03;
+      p.angle += 0.1;
+      
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.angle);
+      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--glow-color').trim();
+      ctx.globalAlpha = p.opacity;
+      ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+      ctx.restore();
+    } else {
+      particles.splice(i, 1);
+    }
+  });
+  
+  sparkles.forEach((s, i) => {
+    s.opacity -= 0.01;
+    if (s.opacity <= 0) {
+      sparkles.splice(i, 1);
+      return;
+    }
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--glow-color').trim();
+    ctx.globalAlpha = s.opacity;
+    ctx.fillRect(s.x, s.y, s.size, s.size);
+  });
+  
+  spawnParticle();
+  spawnSparkles();
+  requestAnimationFrame(animate);
+}
+animate();
+
+})();
+
+window.fullscreenFrame = function() {
+  const frame = document.getElementById("contentFrame");
+  const proxy = document.getElementById("proxyIframe");
+  const request = document.getElementById("requestIframe");
+
+  let active = null;
+
+  if (frame.style.display === "block") {
+    active = frame;
+  } else if (document.getElementById("proxyContent").style.display === "block") {
+    active = proxy;
+  } else if (document.getElementById("requestContent").style.display === "block") {
+    active = request;
+  }
+
+  if (!active) return;
+
+  if (!document.fullscreenElement) {
+    active.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen().catch(() => {});
+  }
+};
+
+window.refreshFrame = function() {
+  const frame = document.getElementById("contentFrame");
+  const proxy = document.getElementById("proxyIframe");
+  const request = document.getElementById("requestIframe");
+
+  if (frame.style.display === "block") {
+    frame.src = frame.src;
+  } else if (document.getElementById("proxyContent").style.display === "block") {
+    proxy.src = proxy.src;
+  } else if (document.getElementById("requestContent").style.display === "block") {
+    request.src = request.src;
+  }
+};
+</script>
 </body>
 </html>
