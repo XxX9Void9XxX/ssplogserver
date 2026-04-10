@@ -12,14 +12,12 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
 
-const { Pool } = pg;
-
-const pool = new Pool({
+const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
 
-// Create table
+// Create table automatically
 await pool.query(`
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
@@ -29,19 +27,19 @@ CREATE TABLE IF NOT EXISTS users (
 `);
 
 function auth(req, res, next) {
-  const token = req.headers.authorization;
-  if (!token) return res.status(401).json({ error: "No token" });
+  const header = req.headers.authorization;
+  if (!header) return res.status(401).json({ error: "No token" });
 
   try {
-    const data = jwt.verify(token.split(" ")[1], process.env.JWT_SECRET);
-    req.user = data;
+    const token = header.split(" ")[1];
+    req.user = jwt.verify(token, process.env.JWT_SECRET);
     next();
   } catch {
     res.status(401).json({ error: "Invalid token" });
   }
 }
 
-// SIGNUP
+// SIGN UP
 app.post("/api/signup", async (req, res) => {
   const { username, password } = req.body;
 
@@ -55,7 +53,7 @@ app.post("/api/signup", async (req, res) => {
 
     res.json({ ok: true });
   } catch {
-    res.status(400).json({ error: "User exists" });
+    res.status(400).json({ error: "User already exists" });
   }
 });
 
@@ -82,10 +80,10 @@ app.post("/api/login", async (req, res) => {
   res.json({ token });
 });
 
-// GET USER (test)
+// TEST AUTH
 app.get("/api/me", auth, (req, res) => {
   res.json(req.user);
 });
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log("Running on " + PORT));
+app.listen(PORT, () => console.log("Server running on " + PORT));
