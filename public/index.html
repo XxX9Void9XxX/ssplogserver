@@ -441,7 +441,6 @@ function forceLogout(msg) {
     hideAllSections();
     homeContent.style.display = "block";
     
-    // Show login screen with warning message
     checkLoginStatus(); 
     authMessage.innerText = msg;
     authMessage.style.color = "#ff4d4d"; 
@@ -452,7 +451,6 @@ logoutBtn.addEventListener('click', async () => {
     if (token) {
         logoutBtn.innerText = "Logging out...";
         try {
-            // Wait for the server to process the offline request before killing the token locally
             await fetch('/offline', { 
                 method: 'POST', 
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -480,6 +478,7 @@ async function loadAdminData() {
             const onlineBadge = user.is_online ? `<span class="statusBadge online">Online</span>` : `<span class="statusBadge offline">Offline</span>`;
             
             let actionButtons = '';
+            // Using plain numbers for PostgreSQL IDs
             if (!user.is_approved) actionButtons += `<button class="adminActionBtn btn-approve" onclick="adminAction(${user.id}, 'approve')">Approve</button>`;
             if (!user.is_banned) actionButtons += `<button class="adminActionBtn btn-ban" onclick="adminAction(${user.id}, 'ban')">Ban</button>`;
             if (user.is_banned) actionButtons += `<button class="adminActionBtn btn-unban" onclick="adminAction(${user.id}, 'unban')">Unban</button>`;
@@ -506,10 +505,10 @@ window.adminAction = async function(userId, action) {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ userId, action })
     });
-    loadAdminData(); // Refresh table
+    loadAdminData(); 
 };
 
-// --- HEARTBEAT & OFFLINE LOGIC ---
+// --- HEARTBEAT LOGIC: EXPIRES EVERY 24 HOURS ---
 async function sendHeartbeat() {
     const token = localStorage.getItem('token');
     if (!token) return;
@@ -520,37 +519,25 @@ async function sendHeartbeat() {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         
-        // If server says they are unauthorized (401) or forbidden (403)
-        if (response.status === 401 || response.status === 403) {
-            forceLogout("Your account has been banned or session expired.");
-            return;
-        }
-
-        const data = await response.json().catch(() => ({}));
-        // If the server explicitly sends back a ban flag
-        if (data.is_banned === true || data.banned === true || data.error === "banned") {
-            forceLogout("Your account has been banned by an admin.");
+        if (response.status === 401) {
+            // Token has expired or is invalid
+            forceLogout("Session expired. Please log in again.");
         }
     } catch (err) {
-        // Ignore network errors so they don't get logged out if the server/internet lags
+        // Ignore network errors so it doesn't log out if their wifi drops temporarily
     }
 }
 
 function startHeartbeat() {
     sendHeartbeat();
     if (heartbeatInterval) clearInterval(heartbeatInterval);
-    // 3 seconds so the ban hits them almost instantly
-    heartbeatInterval = setInterval(sendHeartbeat, 3000); 
+    heartbeatInterval = setInterval(sendHeartbeat, 5000); // 5 seconds is light enough for Neon
 }
 
-// More reliable tab-close/minimize detection
 window.addEventListener('visibilitychange', () => {
     const token = localStorage.getItem('token');
     if (document.visibilityState === 'hidden' && token) {
-        // Send a beacon when the user minimizes or closes the tab
         navigator.sendBeacon(`/offline`, new Blob([JSON.stringify({ token })], { type: 'application/json' }));
-        
-        // Also fire a keepalive fetch just in case the server requires the Auth header to be standard
         fetch('/offline', { 
             method: 'POST', 
             headers: { 'Authorization': `Bearer ${token}` },
@@ -849,7 +836,7 @@ animate();
 
 })();
 
-// FULLSCREEN CURRENT VIEW (GAME / PROXY / REQUEST)
+// FULLSCREEN CURRENT VIEW
 window.fullscreenFrame = function() {
   const frame = document.getElementById("contentFrame");
   const proxy = document.getElementById("proxyIframe");
