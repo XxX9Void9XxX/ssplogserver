@@ -262,4 +262,632 @@ a.creditLine:hover { transform:scale(1.05); }
       <h2>Proxies are being updated</h2>
       <h2>Alternate SSP Links</h2>
       <a href="https://hereclicklink.vercel.app" target="_blank" class="line" style="animation-delay: 12s;">hereclicklink.vercel.app</a>
-      <a href="https://s
+      <a href="https://sspv3play.vercel.app" target="_blank" class="line" style="animation-delay: 12.5s;">sspv3play.vercel.app</a>
+      <a href="https://n8yfgsidfumsafdiuasdyhfsaidufhsadim.vercel.app/" target="_blank" class="line" style="animation-delay: 13.5s;">n8yfgsidfumsafdiuasdyhfsaidufhsadim.vercel.app/</a>
+      <a href="https://sspv2play.neocities.org/" target="_blank" class="line" style="animation-delay: 13.5s;">sspv2play.neocities.org</a>
+    </div>
+  </div>
+
+  <div id="requestContent">
+    <h1>Request/Report</h1>
+    <div id="requestFormContainer">
+      <iframe id="requestIframe" src="about:blank"></iframe>
+    </div>
+  </div>
+
+  <div id="proxyContent">
+    <iframe id="proxyIframe" src="about:blank"></iframe>
+  </div>
+
+  <div id="creditsContent">
+    <div class="creditLine" style="animation-delay: 0s;">Credits:</div>
+    <a href="https://www.youtube.com/@KaibotVR" target="_blank" rel="noopener noreferrer" class="creditLine" style="animation-delay: 0.5s;">Subscribe to KaibotVR on YouTube</a>
+    <a href="https://youtube.com/@WavezGT" target="_blank" rel="noopener noreferrer" class="creditLine" style="animation-delay: 1.5s;">Subscribe to WavezGT on YouTube</a>
+    <div class="creditLine" style="animation-delay: 2s;">Friend me on Minecraft</div>
+    <div class="creditLine" style="animation-delay: 2.5s;">Main Minecraft Accounts: TempestBlock and EntityXError</div>
+    <div class="creditLine" style="animation-delay: 3s;">Other Minecraft Accounts: XVoidVortexX, DipolarJungle, XShadow989X, XVoidVortex989X</div>
+    <a href="https://scratch.mit.edu/users/griffpatch/" target="_blank" rel="noopener noreferrer" class="creditLine" style="animation-delay: 3.5s;">Thanks to Griffpatch for some scratch games</a>
+    <a href="https://www.nitrotype.com/team/XERROR" target="_blank" rel="noopener noreferrer" class="creditLine" style="animation-delay: 4s;">Join my Nitro type team we are doing very good and we are in the legend league</a>
+    <div class="creditLine" style="animation-delay: 4.5s;">Thanks to Interstellar for the proxy backend</div>
+    <div class="creditLine" style="animation-delay: 5s;">Not all of these games/apps are mine — they belong to their owners.</div>
+  </div>
+
+  <iframe id="contentFrame"></iframe>
+</div>
+
+<script>
+(function(){
+// Auth Elements
+const authOverlay = document.getElementById('authOverlay');
+const loginForm = document.getElementById('loginForm');
+const signupForm = document.getElementById('signupForm');
+const toggleAuthBtn = document.getElementById('toggleAuthBtn');
+const authTitle = document.getElementById('authTitle');
+const authMessage = document.getElementById('authMessage');
+
+// Settings Elements
+const clock = document.getElementById('clock');
+const settingsMenu = document.getElementById('settingsMenu');
+const settingsIcon = document.getElementById('settingsIcon');
+const glowColorInput = document.getElementById('glowColor');
+const toggleFullscreen = document.getElementById('toggleFullscreen');
+const adminPanelBtn = document.getElementById('adminPanelBtn');
+const logoutBtn = document.getElementById('logoutBtn');
+
+// Content Elements
+const homeContent = document.getElementById('homeContent');
+const gamesContent = document.getElementById('gamesContent');
+const appsContent = document.getElementById('appsContent');
+const minecraftContent = document.getElementById('minecraftContent');
+const linksContent = document.getElementById('linksContent');
+const requestContent = document.getElementById('requestContent');
+const proxyContent = document.getElementById('proxyContent');
+const creditsContent = document.getElementById('creditsContent');
+const adminDashboard = document.getElementById('adminDashboard');
+const contentFrame = document.getElementById('contentFrame');
+const titleHeader = document.getElementById('titleHeader');
+const proxyIframe = document.getElementById('proxyIframe');
+const requestIframe = document.getElementById('requestIframe');
+
+let isLoginMode = true;
+let heartbeatInterval;
+
+// --- AUTH LOGIC ---
+function checkLoginStatus() {
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+    
+    if (token) {
+        authOverlay.style.display = 'none';
+        logoutBtn.style.display = 'block';
+        
+        if (role === 'admin') {
+            adminPanelBtn.style.display = 'block';
+        } else {
+            adminPanelBtn.style.display = 'none';
+        }
+        startHeartbeat();
+    } else {
+        authOverlay.style.display = 'flex';
+        logoutBtn.style.display = 'none';
+        adminPanelBtn.style.display = 'none';
+        if(heartbeatInterval) clearInterval(heartbeatInterval);
+    }
+}
+checkLoginStatus();
+
+toggleAuthBtn.addEventListener('click', () => {
+    isLoginMode = !isLoginMode;
+    authMessage.innerText = "";
+    authMessage.style.color = "#d580ff";
+    if (isLoginMode) {
+        loginForm.style.display = 'block';
+        signupForm.style.display = 'none';
+        authTitle.innerText = 'Log In to SSP';
+        toggleAuthBtn.innerText = 'Need an account? Sign Up';
+    } else {
+        loginForm.style.display = 'none';
+        signupForm.style.display = 'block';
+        authTitle.innerText = 'Create SSP Account';
+        toggleAuthBtn.innerText = 'Already have an account? Log In';
+    }
+});
+
+loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = document.getElementById('loginUser').value;
+    const password = document.getElementById('loginPass').value;
+    authMessage.innerText = "Authenticating...";
+    authMessage.style.color = "#d580ff";
+
+    try {
+        const response = await fetch('/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        const data = await response.json();
+        
+        if (data.token) {
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('role', data.role);
+            authMessage.innerText = "Access Granted.";
+            authMessage.style.color = "#28a745";
+            setTimeout(checkLoginStatus, 500);
+        } else {
+            authMessage.innerText = data.error;
+            authMessage.style.color = "#ff4d4d";
+        }
+    } catch (err) {
+        authMessage.innerText = "Server error. Try again later.";
+        authMessage.style.color = "#ff4d4d";
+    }
+});
+
+signupForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = document.getElementById('signupUser').value;
+    const email = document.getElementById('signupEmail').value;
+    const password = document.getElementById('signupPass').value;
+    authMessage.innerText = "Registering...";
+    authMessage.style.color = "#d580ff";
+
+    try {
+        const response = await fetch('/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, email, password })
+        });
+        const data = await response.json();
+        
+        if (response.ok) {
+            authMessage.innerText = data.message;
+            authMessage.style.color = "#28a745";
+            setTimeout(() => toggleAuthBtn.click(), 2500);
+        } else {
+            authMessage.innerText = data.error;
+            authMessage.style.color = "#ff4d4d";
+        }
+    } catch (err) {
+        authMessage.innerText = "Server error. Try again later.";
+        authMessage.style.color = "#ff4d4d";
+    }
+});
+
+function forceLogout(msg) {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    if (heartbeatInterval) clearInterval(heartbeatInterval);
+    hideAllSections();
+    homeContent.style.display = "block";
+    
+    // Show login screen with warning message
+    checkLoginStatus(); 
+    authMessage.innerText = msg;
+    authMessage.style.color = "#ff4d4d"; 
+}
+
+logoutBtn.addEventListener('click', async () => {
+    const token = localStorage.getItem('token');
+    if (token) {
+        logoutBtn.innerText = "Logging out...";
+        try {
+            // Wait for the server to process the offline request before killing the token locally
+            await fetch('/offline', { 
+                method: 'POST', 
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+        } catch(e) {}
+    }
+    forceLogout("Logged out securely.");
+    authMessage.style.color = "#d580ff"; 
+    logoutBtn.innerText = "Log Out";
+});
+
+// --- ADMIN SYSTEM ---
+async function loadAdminData() {
+    const token = localStorage.getItem('token');
+    try {
+        const response = await fetch('/admin/users', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const users = await response.json();
+        const tbody = document.getElementById('adminUserTableBody');
+        tbody.innerHTML = '';
+
+        users.forEach(user => {
+            const statusText = user.is_banned ? 'BANNED' : (user.is_approved ? 'Approved' : 'Pending');
+            const onlineBadge = user.is_online ? `<span class="statusBadge online">Online</span>` : `<span class="statusBadge offline">Offline</span>`;
+            
+            let actionButtons = '';
+            if (!user.is_approved) actionButtons += `<button class="adminActionBtn btn-approve" onclick="adminAction(${user.id}, 'approve')">Approve</button>`;
+            if (!user.is_banned) actionButtons += `<button class="adminActionBtn btn-ban" onclick="adminAction(${user.id}, 'ban')">Ban</button>`;
+            if (user.is_banned) actionButtons += `<button class="adminActionBtn btn-unban" onclick="adminAction(${user.id}, 'unban')">Unban</button>`;
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>${user.username}</td>
+                    <td>${user.email}</td>
+                    <td>${statusText}</td>
+                    <td>${onlineBadge}</td>
+                    <td>${actionButtons}</td>
+                </tr>
+            `;
+        });
+    } catch(err) {
+        console.error("Could not load admin data.");
+    }
+}
+
+window.adminAction = async function(userId, action) {
+    const token = localStorage.getItem('token');
+    await fetch('/admin/action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ userId, action })
+    });
+    loadAdminData(); // Refresh table
+};
+
+// --- HEARTBEAT & OFFLINE LOGIC ---
+async function sendHeartbeat() {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    
+    try {
+        const response = await fetch('/heartbeat', { 
+            method: 'POST', 
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        // If server says they are unauthorized (401) or forbidden (403)
+        if (response.status === 401 || response.status === 403) {
+            forceLogout("Your account has been banned or session expired.");
+            return;
+        }
+
+        const data = await response.json().catch(() => ({}));
+        // If the server explicitly sends back a ban flag
+        if (data.is_banned === true || data.banned === true || data.error === "banned") {
+            forceLogout("Your account has been banned by an admin.");
+        }
+    } catch (err) {
+        // Ignore network errors so they don't get logged out if the server/internet lags
+    }
+}
+
+function startHeartbeat() {
+    sendHeartbeat();
+    if (heartbeatInterval) clearInterval(heartbeatInterval);
+    // 3 seconds so the ban hits them almost instantly
+    heartbeatInterval = setInterval(sendHeartbeat, 3000); 
+}
+
+// More reliable tab-close/minimize detection
+window.addEventListener('visibilitychange', () => {
+    const token = localStorage.getItem('token');
+    if (document.visibilityState === 'hidden' && token) {
+        // Send a beacon when the user minimizes or closes the tab
+        navigator.sendBeacon(`/offline`, new Blob([JSON.stringify({ token })], { type: 'application/json' }));
+        
+        // Also fire a keepalive fetch just in case the server requires the Auth header to be standard
+        fetch('/offline', { 
+            method: 'POST', 
+            headers: { 'Authorization': `Bearer ${token}` },
+            keepalive: true 
+        }).catch(()=>{});
+    }
+});
+
+// --- BASE SITE LOGIC ---
+function updateClock(){
+  const now = new Date();
+  let h = now.getHours();
+  const m = String(now.getMinutes()).padStart(2,'0');
+  const s = String(now.getSeconds()).padStart(2,'0');
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  clock.textContent = `${h}:${m}:${s} ${ampm}`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+function hideAllSections() {
+  homeContent.style.display = "none";
+  gamesContent.style.display = "none";
+  appsContent.style.display = "none";
+  minecraftContent.style.display = "none";
+  linksContent.style.display = "none";
+  requestContent.style.display = "none";
+  proxyContent.style.display = "none";
+  creditsContent.style.display = "none";
+  adminDashboard.style.display = "none";
+  contentFrame.style.display = "none";
+}
+
+window.loadGame = function(url) {
+  hideAllSections();
+  contentFrame.style.display = "block";
+  contentFrame.src = url;
+}
+
+window.showGames = function() { hideAllSections(); gamesContent.style.display = "block"; contentFrame.src = ""; };
+window.showApps = function() { hideAllSections(); appsContent.style.display = "block"; contentFrame.src = ""; };
+window.showMinecraft = function() { hideAllSections(); minecraftContent.style.display = "block"; contentFrame.src = ""; };
+
+window.showLinks = function() {
+  hideAllSections();
+  linksContent.style.display = "block";
+  contentFrame.src = "";
+  const lines = document.querySelectorAll('#linksContent .line');
+  lines.forEach((line) => {
+    line.style.animation = 'none';
+    line.offsetHeight;
+    line.style.animation = null;
+  });
+};
+
+window.showRequest = function() {
+  hideAllSections();
+  requestContent.style.display = "block";
+  requestIframe.src = "https://docs.google.com/forms/d/e/1FAIpQLSe-upLodzjs0kcV1UPaGuR0Rykqf7xrog7LHunUkNaORu0HaA/viewform";
+};
+
+window.showProxy = function() {
+  hideAllSections();
+  proxyContent.style.display = "block";
+  proxyIframe.src = "https://fffsssffss1.vercel.app/a/hvtrs8%2F-sqpt2rlcy%2Cngoaivigs%2Copg-arp-bpousgr";
+};
+
+window.showCredits = function() {
+  hideAllSections();
+  creditsContent.style.display = "block";
+  contentFrame.src = "";
+  const lines = document.querySelectorAll('.creditLine');
+  lines.forEach(line => {
+    line.style.animation = 'none';
+    line.offsetHeight;
+    line.style.animation = null;
+  });
+};
+
+window.showAdmin = function() {
+  hideAllSections();
+  adminDashboard.style.display = "block";
+  settingsMenu.style.display = "none";
+  loadAdminData();
+}
+
+// Settings
+settingsIcon.onclick = function(e) {
+  e.stopPropagation();
+  settingsMenu.style.display = settingsMenu.style.display === "block" ? "none" : "block";
+};
+document.addEventListener("click", (e) => {
+  if (!settingsMenu.contains(e.target) && e.target !== settingsIcon) {
+    settingsMenu.style.display = "none";
+  }
+});
+
+const saved = JSON.parse(localStorage.getItem("sspSettings")) || {glow: true, clock: true};
+const savedExtra = JSON.parse(localStorage.getItem("sspExtraSettings")) || {glowColor: "#9b59b6", fullscreen: false};
+
+const toggleGlow = document.getElementById("toggleGlow");
+const toggleClock = document.getElementById("toggleClock");
+
+toggleGlow.checked = saved.glow;
+toggleClock.checked = saved.clock;
+
+function applySettings(s) {
+  s.glow ? document.body.classList.remove("noGlow") : document.body.classList.add("noGlow");
+  clock.style.display = s.clock ? "block" : "none";
+}
+
+function saveSettings() {
+  const s = {glow: toggleGlow.checked, clock: toggleClock.checked};
+  localStorage.setItem("sspSettings", JSON.stringify(s));
+  applySettings(s);
+}
+
+toggleGlow.onchange = saveSettings;
+toggleClock.onchange = saveSettings;
+
+function applyExtraSettings(s) {
+  document.documentElement.style.setProperty('--glow-color', s.glowColor);
+  glowColorInput.value = s.glowColor;
+  toggleFullscreen.checked = s.fullscreen;
+  if (s.fullscreen && !document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  }
+}
+
+function saveExtraSettings() {
+  const s = {glowColor: glowColorInput.value, fullscreen: toggleFullscreen.checked};
+  localStorage.setItem("sspExtraSettings", JSON.stringify(s));
+  applyExtraSettings(s);
+}
+
+glowColorInput.onchange = saveExtraSettings;
+toggleFullscreen.onchange = () => {
+  toggleFullscreen.checked ? 
+    document.documentElement.requestFullscreen().catch(() => {}) : 
+    document.exitFullscreen().catch(() => {});
+  saveExtraSettings();
+};
+
+applySettings(saved);
+applyExtraSettings(savedExtra);
+
+window.addEventListener('contextmenu', e => e.preventDefault());
+titleHeader.onclick = () => {
+  hideAllSections();
+  homeContent.style.display = "block";
+  contentFrame.src = "";
+};
+
+// Search functionality
+function setupSearch(searchInputId, containerId) {
+  const searchBar = document.getElementById(searchInputId);
+  const container = document.getElementById(containerId);
+  const cards = container.querySelectorAll(".gameCard");
+  searchBar.addEventListener("input", () => {
+    const searchText = searchBar.value.toLowerCase();
+    cards.forEach(card => {
+      const title = card.querySelector(".gameTitle").textContent.toLowerCase();
+      card.style.display = title.includes(searchText) ? "flex" : "none";
+    });
+  });
+}
+setupSearch('gamesSearchBar', 'gamesLinksContainer');
+setupSearch('appsSearchBar', 'appsLinksContainer');
+setupSearch('minecraftSearchBar', 'minecraftLinksContainer');
+
+// Tools
+window.runTool = function(type) {
+  switch(type) {
+    case 'autoclicker':
+      fetch('https://cdn.jsdelivr.net/gh/wea-f/Norepted@a4cd53b/bookmarklets/autoclicker.js')
+        .then(r => r.text()).then(eval);
+      break;
+    case 'asteroids':
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/gh/skysthelimitt/Selenite/js/asteroids.min.js';
+      document.body.appendChild(s);
+      break;
+    case 'edit':
+      document.body.contentEditable = document.body.contentEditable === "true" ? "false" : "true";
+      break;
+  }
+};
+
+// Particle effects
+const canvas = document.getElementById('particleCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
+
+let particles = [], sparkles = [];
+const maxParticles = 300, maxSparkles = 50;
+let mouse = {x: canvas.width/2, y: canvas.height/2};
+
+window.addEventListener('mousemove', e => {
+  mouse.x = e.clientX;
+  mouse.y = e.clientY;
+});
+
+function spawnParticle() {
+  const edge = Math.floor(Math.random() * 4);
+  let x, y;
+  switch(edge) {
+    case 0: x = Math.random() * canvas.width; y = 0; break;
+    case 1: x = canvas.width; y = Math.random() * canvas.height; break;
+    case 2: x = Math.random() * canvas.width; y = canvas.height; break;
+    case 3: x = 0; y = Math.random() * canvas.height; break;
+  }
+  particles.push({
+    x, y,
+    size: 2 + Math.random() * 5,
+    speed: 0.3 + Math.random() * 0.5,
+    opacity: 0.2 + Math.random() * 0.5,
+    angle: Math.random() * 360
+  });
+  if (particles.length > maxParticles) particles.shift();
+}
+
+function spawnSparkles() {
+  if (Math.random() < 0.2 && sparkles.length < maxSparkles) {
+    sparkles.push({
+      x: mouse.x + Math.random() * 50 - 25,
+      y: mouse.y + Math.random() * 50 - 25,
+      size: 1 + Math.random() * 3,
+      opacity: 0.2 + Math.random() * 0.5
+    });
+  }
+}
+
+function addClickParticles(e) {
+  for (let i = 0; i < 5; i++) {
+    particles.push({
+      x: mouse.x + Math.random() * 20 - 10,
+      y: mouse.y + Math.random() * 20 - 10,
+      size: 2 + Math.random() * 4,
+      speed: 0.3 + Math.random() * 0.5,
+      opacity: 0.3 + Math.random() * 0.5,
+      angle: Math.random() * 360
+    });
+  }
+}
+
+canvas.addEventListener('mousedown', addClickParticles);
+canvas.addEventListener('mousemove', e => { if (e.buttons) addClickParticles(e); });
+
+function animate() {
+  ctx.fillStyle = 'rgba(0,0,0,0.15)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  particles.forEach((p, i) => {
+    const dx = mouse.x - p.x, dy = mouse.y - p.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > 3) {
+      p.x += dx * 0.03;
+      p.y += dy * 0.03;
+      p.angle += 0.1;
+      
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.angle);
+      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--glow-color').trim();
+      ctx.globalAlpha = p.opacity;
+      ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+      ctx.restore();
+    } else {
+      particles.splice(i, 1);
+    }
+  });
+  
+  sparkles.forEach((s, i) => {
+    s.opacity -= 0.01;
+    if (s.opacity <= 0) {
+      sparkles.splice(i, 1);
+      return;
+    }
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--glow-color').trim();
+    ctx.globalAlpha = s.opacity;
+    ctx.fillRect(s.x, s.y, s.size, s.size);
+  });
+  
+  spawnParticle();
+  spawnSparkles();
+  requestAnimationFrame(animate);
+}
+animate();
+
+})();
+
+// FULLSCREEN CURRENT VIEW (GAME / PROXY / REQUEST)
+window.fullscreenFrame = function() {
+  const frame = document.getElementById("contentFrame");
+  const proxy = document.getElementById("proxyIframe");
+  const request = document.getElementById("requestIframe");
+
+  let active = null;
+
+  if (frame.style.display === "block") {
+    active = frame;
+  } else if (document.getElementById("proxyContent").style.display === "block") {
+    active = proxy;
+  } else if (document.getElementById("requestContent").style.display === "block") {
+    active = request;
+  }
+
+  if (!active) return;
+
+  if (!document.fullscreenElement) {
+    active.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen().catch(() => {});
+  }
+};
+
+// REFRESH CURRENT VIEW
+window.refreshFrame = function() {
+  const frame = document.getElementById("contentFrame");
+  const proxy = document.getElementById("proxyIframe");
+  const request = document.getElementById("requestIframe");
+
+  if (frame.style.display === "block") {
+    frame.src = frame.src;
+  } else if (document.getElementById("proxyContent").style.display === "block") {
+    proxy.src = proxy.src;
+  } else if (document.getElementById("requestContent").style.display === "block") {
+    request.src = request.src;
+  }
+};
+</script>
+</body>
+</html>
