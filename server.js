@@ -13,7 +13,7 @@ app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // IMPORTANT: Paste your Neon Connection String inside these quotes!
-const NEON_URI = "PASTE_YOUR_NEON_POSTGRES_URL_HERE"; 
+const NEON_URI = "postgresql://neondb_owner:npg_xBa02HOJktXz@ep-delicate-dream-amrk8l8h-pooler.c-5.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"; 
 const SECRET_KEY = "shadow-sites-plus-super-secret-key"; 
 
 // --- CONNECT TO NEON DATABASE ---
