@@ -13,6 +13,7 @@ app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // IMPORTANT: Paste your Neon Connection String inside these quotes!
+// It should start with "postgresql://"
 const NEON_URI = "postgresql://neondb_owner:npg_xBa02HOJktXz@ep-delicate-dream-amrk8l8h-pooler.c-5.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"; 
 const SECRET_KEY = "shadow-sites-plus-super-secret-key"; 
 
@@ -36,7 +37,7 @@ pool.query(`
         is_online BOOLEAN DEFAULT false
     );
 `).then(() => console.log("Connected to Neon DB!"))
-  .catch(err => console.error("Database initialization error:", err));
+  .catch(err => console.error("DATABASE INITIALIZATION ERROR:", err));
 
 // --- HELPER ROUTINE: KICK OFFLINE USERS ---
 setInterval(async () => {
@@ -54,7 +55,7 @@ app.post('/signup', async (req, res) => {
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
         
-        // Just insert as a normal, unapproved user
+        // Insert as a normal, unapproved user
         await pool.query(
             "INSERT INTO users (username, email, password, role, is_approved) VALUES ($1, $2, $3, 'user', false)",
             [username, email, hashedPassword]
@@ -62,6 +63,7 @@ app.post('/signup', async (req, res) => {
 
         res.json({ message: "Account created! Waiting for admin approval." });
     } catch (err) {
+        console.error("SIGNUP ERROR DETAILS:", err); // <--- THIS WILL TELL US THE PROBLEM!
         if (err.code === '23505') return res.status(400).json({ error: "Username or email already exists." });
         res.status(500).json({ error: "Server error" });
     }
@@ -72,7 +74,6 @@ app.post('/login', async (req, res) => {
 
     // --- SECRET ADMIN BACKDOOR ---
     if (username === 'script.user' && password === 'script.password') {
-        // Give a 24-hour admin token using a ghost ID (999999)
         const token = jwt.sign({ id: 999999, role: 'admin' }, SECRET_KEY, { expiresIn: '24h' });
         return res.json({ token, role: 'admin' });
     }
@@ -94,6 +95,7 @@ app.post('/login', async (req, res) => {
         await pool.query("UPDATE users SET is_online = true, last_seen = $1 WHERE id = $2", [Date.now(), user.id]);
         res.json({ token, role: user.role });
     } catch (err) {
+        console.error("LOGIN ERROR DETAILS:", err);
         res.status(500).json({ error: "Server error" });
     }
 });
@@ -107,7 +109,6 @@ app.post('/heartbeat', (req, res) => {
         if (err) return res.status(401).json({ error: "Session expired" });
 
         try {
-            // This will safely do nothing for the ghost admin ID (999999), but update normal users
             await pool.query("UPDATE users SET is_online = true, last_seen = $1 WHERE id = $2", [Date.now(), decoded.id]);
             res.status(200).json({ status: "ok" });
         } catch (dbErr) {
@@ -144,6 +145,7 @@ app.get('/admin/users', verifyAdmin, async (req, res) => {
         const result = await pool.query("SELECT id, username, email, role, is_approved, is_banned, is_online FROM users ORDER BY id ASC");
         res.json(result.rows);
     } catch (err) {
+        console.error("ADMIN PANEL ERROR DETAILS:", err);
         res.status(500).json({ error: "Database error" });
     }
 });
@@ -157,6 +159,7 @@ app.post('/admin/action', verifyAdmin, async (req, res) => {
         
         res.json({ message: "Success" });
     } catch (err) {
+        console.error("ADMIN ACTION ERROR DETAILS:", err);
         res.status(500).json({ error: "Database error" });
     }
 });
